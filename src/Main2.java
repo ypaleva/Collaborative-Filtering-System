@@ -6,6 +6,7 @@ import java.io.File;
 import java.util.HashMap;
 import java.util.Map.Entry;
 import java.util.Map;
+import java.lang.*;
 
 /**
  * A few simple database manipulations using the SQLite4Java wrapper for the
@@ -170,6 +171,32 @@ public class Main2 {
         return sum;
     }
 
+    public Float calculateDenominatorForSimilarityFunction(Integer item1,Integer item2){
+        HashMap<Integer, RatingTuple> userRatingsForTwoItems = getUserRatingsForTwoItems(item1, item2);
+        Float sum1 = 0.0f;
+        Float sum2 = 0.0f;
+        Float prod = 0.0f;
+
+        for (Integer user: userRatingsForTwoItems.keySet())
+        {
+            Float userAverageRating =  averageRatings.get(user);
+            Float f1 = userRatingsForTwoItems.get(user).getRating1() - userAverageRating;
+            Float f2 = userRatingsForTwoItems.get(user).getRating2() - userAverageRating;
+            sum1 += (float) Math.pow(f1, 2);
+            sum2 += (float) Math.pow(f2, 2);
+        }
+
+        prod = (float) Math.sqrt(sum1) * (float) Math.sqrt(sum2);
+        return prod;
+    }
+
+    public Float calculateSimilarityBetweenTwoItems(Integer item1, Integer item2){
+        Float numerator = calculateNumeratorForSimilarityFunction(item1, item2);
+        Float denominator =  calculateDenominatorForSimilarityFunction(item1, item2);
+
+        return numerator / denominator;
+    }
+
     /**
      * Create a table or clear it if it already exists.
      *
@@ -282,7 +309,9 @@ public class Main2 {
         db.populateUserHM();
         //db.createTestTrainingSet();
         db.populateAveragesInMap();
-        System.out.println(db.calculateNumeratorForSimilarityFunction(1578, 1292));
+        //System.out.println(db.calculateNumeratorForSimilarityFunction(1578, 1292));
+        //System.out.println(db.calculateDenominatorForSimilarityFunction(1578, 1292));
+        System.out.println("Similarity: " + db.calculateSimilarityBetweenTwoItems(1578, 1292));
         db.finish();
     }
 }
