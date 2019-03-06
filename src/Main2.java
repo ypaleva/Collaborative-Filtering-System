@@ -3,6 +3,7 @@ import com.almworks.sqlite4java.SQLiteException;
 import com.almworks.sqlite4java.SQLiteStatement;
 
 import java.io.File;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map.Entry;
 import java.util.Map;
@@ -10,7 +11,7 @@ import java.util.Map;
 /**
  * A few simple database manipulations using the SQLite4Java wrapper for the
  * Recommender System coursework.
- *
+ * <p>
  * It assumes that a database exists which is named "comp3208.db" and this
  * database is already loaded with all the training userHM set into a table called
  * "TRAININGSET", which is assumed to have the following columns: "UserID", "ItemID" and "Rating"
@@ -18,13 +19,13 @@ import java.util.Map;
  * userHM itself if these are strings).
  *
  * @author Enrico Gerding
- *
  */
 public class Main2 {
     final String database_filename = "comp3208.db";
     final String trainingset_tablename = "TRAININGSET";
     public SQLiteConnection c;
     public HashMap<Integer, Float> averageRatings = new HashMap<>();
+    public ArrayList<ItemTuple> itemTuples = new ArrayList<>();
 
     /**
      * The userHM is stored in a HashMap, which allows fast access.
@@ -48,7 +49,7 @@ public class Main2 {
 
     /**
      * Load training userHM.
-     *
+     * <p>
      * The userHM is loaded into a HashMap where the key is the user, and the
      * value is another HashMap where the key is the item. This makes it very
      * fast to look up all the items belonging to a particular user. If you need
@@ -113,9 +114,9 @@ public class Main2 {
         }
     }
 
-    public HashMap<Integer, RatingTuple> getUserRatingsForTwoItems(int item1, int item2){
-        HashMap<Integer,Float> userRatingsForItem1 = itemHM.get(item1);
-        HashMap<Integer,Float> userRatingsForItem2 = itemHM.get(item2);
+    public HashMap<Integer, RatingTuple> getUserRatingsForTwoItems(int item1, int item2) {
+        HashMap<Integer, Float> userRatingsForItem1 = itemHM.get(item1);
+        HashMap<Integer, Float> userRatingsForItem2 = itemHM.get(item2);
         //int count = 0;
         HashMap<Integer, RatingTuple> userRatingsForTwoItems = new HashMap<Integer, RatingTuple>();
         //System.out.println(userRatingsForTwoItems.size());
@@ -154,13 +155,12 @@ public class Main2 {
         return average;
     }
 
-    public Float calculateNumeratorForSimilarityFunction(Integer item1, Integer item2){
+    public Float calculateNumeratorForSimilarityFunction(Integer item1, Integer item2) {
         HashMap<Integer, RatingTuple> userRatingsForTwoItems = getUserRatingsForTwoItems(item1, item2);
         Float sum = 0.0f;
 
-        for (Integer user: userRatingsForTwoItems.keySet())
-        {
-            Float userAverageRating =  averageRatings.get(user);
+        for (Integer user : userRatingsForTwoItems.keySet()) {
+            Float userAverageRating = averageRatings.get(user);
             //System.out.println(userAverageRating);
             Float f1 = userRatingsForTwoItems.get(user).getRating1() - userAverageRating;
             Float f2 = userRatingsForTwoItems.get(user).getRating2() - userAverageRating;
@@ -170,12 +170,22 @@ public class Main2 {
         return sum;
     }
 
+    public void getAllItemTuples() {
+        for (Integer item1 : itemHM.keySet()) {
+            for (Integer item2 : itemHM.keySet()) {
+                if (!(itemTuples.contains(new ItemTuple(item1, item2)) && itemTuples.contains(new ItemTuple(item2, item1)))) {
+                    itemTuples.add(new ItemTuple(item1, item2));
+                }
+            }
+        }
+    }
+
     /**
      * Create a table or clear it if it already exists.
      *
      * @param tablename
      */
-    public void createTable(String tablename){
+    public void createTable(String tablename) {
         try {
             System.out.println("Creating/clearing table " + tablename);
 
@@ -194,7 +204,7 @@ public class Main2 {
     /**
      * An example of how you can create your own getUserRatingsForTwoItems/training set from the userHM
      * you get, so you can evaluate the recommender system.
-     *
+     * <p>
      * Note that this can be done completely by SQL commands. The main purpose
      * of this code is to demonstrates a couple of features of the SQLite4Java
      * wrapper.

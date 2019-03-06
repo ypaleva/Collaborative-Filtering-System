@@ -1,11 +1,18 @@
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 
 public class Test {
 
     public static HashMap<Integer, HashMap<Integer, Float>> data;
-    public static HashMap<Pair, Float> similarityTable = new HashMap<>();
+    public static HashMap<ItemTuple, Float> similarityTable = new HashMap<>();
     public static HashMap<Integer, Float> averageRatings = new HashMap<>();
+    public static ArrayList<ItemTuple> itemTuples = new ArrayList<>();
+    public static HashMap<Integer, HashMap<Integer, Float>> userHM;
+
+    //ItemID -> UserID -> Rating
+    public static HashMap<Integer, HashMap<Integer, Float>> itemHM = new HashMap<>();
+
 
     public static void populateAveragesInMap() {
         for (Integer userID : data.keySet()) {
@@ -30,6 +37,7 @@ public class Test {
     public static Float calculateSimilarityHelper(Integer item1, Integer item2, Float averageRating) {
         Float similarity = 0.0f;
 
+
         return similarity;
     }
 
@@ -38,6 +46,20 @@ public class Test {
             Integer userID = entry.getKey();
             HashMap<Integer, Float> itemToRating = entry.getValue();
 
+        }
+    }
+
+    public static void getAllItemTuples() {
+        for (Integer item1 : itemHM.keySet()) {
+            for (Integer item2 : itemHM.keySet()) {
+                if (!item1.equals(item2)) {
+                    ItemTuple itemTuple1 = new ItemTuple(item1, item2);
+                    ItemTuple itemTuple2 = new ItemTuple(item2, item1);
+                    if (!(itemTuples.contains(itemTuple1) || itemTuples.contains(itemTuple2))) {
+                        itemTuples.add(itemTuple1);
+                    }
+                }
+            }
         }
     }
 
@@ -75,6 +97,18 @@ public class Test {
 
         for (Map.Entry<Integer, Float> entry : averageRatings.entrySet()) {
             System.out.println("User: " + entry.getKey() + ", average rating: " + entry.getValue());
+        }
+
+        itemHM.put(1, rating1);
+        itemHM.put(2, rating2);
+        itemHM.put(3, rating3);
+        itemHM.put(4, rating4);
+        itemHM.put(5, rating5);
+
+        getAllItemTuples();
+
+        for (ItemTuple tuple : itemTuples) {
+            System.out.println("item 1: " + tuple.item1 + ", item 2: " + tuple.item2);
         }
 
 
