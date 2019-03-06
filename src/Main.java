@@ -4,7 +4,6 @@ import com.almworks.sqlite4java.SQLiteStatement;
 
 import java.io.File;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map.Entry;
 
 /**
@@ -30,7 +29,7 @@ public class Main {
      */
     public HashMap<Integer, HashMap<Integer, Float>> data;
 
-    public HashMap<Pair, Float> similarityTable = new HashMap<>();
+    public HashMap<ItemTuple, Float> similarityTable = new HashMap<>();
     public HashMap<Integer, Float> averageRatings = new HashMap<>();
 
     /**
