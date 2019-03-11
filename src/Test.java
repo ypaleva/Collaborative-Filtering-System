@@ -125,9 +125,35 @@ public class Test {
     public static void calculateSimilarities() {
         for (ItemTuple tuple : itemTuples) {
             Float similarity = calculateSimilarityBetweenTwoItems(tuple.item1, tuple.item2);
-            //similarityTable.put(tuple, similarity);
-            System.out.println("Similarity between item " + tuple.item1 + " and item " + tuple.item2 + ": "+ similarity);
+            similarityTable.put(tuple, similarity);
+            //System.out.println("Similarity between item " + tuple.item1 + " and item " + tuple.item2 + ": "+ similarity);
         }
+    }
+
+    public static Float predictRating(Integer user, Integer item) {
+        Float n = 0.0f;
+        Float d = 0.0f;
+        Float pred = 0.0f;
+
+        for (Map.Entry<ItemTuple, Float> entry : similarityTable.entrySet()) {
+
+            if (entry.getKey().item1 == item || entry.getKey().item2 == item) {
+                if (entry.getValue() > 0.0f) {
+                    Float similarity = entry.getValue();
+                    Float rating = 0.0f;
+                    if (entry.getKey().item1 == item) {
+                        rating = data.get(user).get(entry.getKey().item2);
+                    } else {
+                        rating = data.get(user).get(entry.getKey().item1);
+                    }
+                    n = n + (similarity * rating);
+                    d = d + similarity;
+                }
+            }
+
+        }
+        pred = n/d;
+        return pred;
     }
 
     public static void main(String[] args) {
@@ -229,9 +255,11 @@ public class Test {
         }
 
         calculateSimilarities();
-        //for (Map.Entry<ItemTuple, Float> entry : similarityTable.entrySet()) {
-            //System.out.print(entry.getValue());
-        //}
+        for (Map.Entry<ItemTuple, Float> entry : similarityTable.entrySet()) {
+            System.out.print(entry.getValue());
+        }
+        System.out.println();
+        System.out.println("Predicted rating for user 1, item 3: " + predictRating(1, 3));
 
     }
 
