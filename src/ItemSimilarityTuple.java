@@ -1,10 +1,11 @@
 public class ItemSimilarityTuple {
-    private static ItemSimilarityTuple ourInstance = new ItemSimilarityTuple();
 
-    public static ItemSimilarityTuple getInstance() {
-        return ourInstance;
+    Integer itemID;
+    Float similarity;
+
+    public ItemSimilarityTuple(Integer itemID, Float similarity) {
+        this.itemID = itemID;
+        this.similarity = similarity;
     }
 
-    private ItemSimilarityTuple() {
-    }
 }
