@@ -34,13 +34,6 @@ public class Test {
         return average;
     }
 
-    public static Float calculateSimilarityHelper(Integer item1, Integer item2, Float averageRating) {
-        Float similarity = 0.0f;
-
-
-        return similarity;
-    }
-
     public static void calculateAllSimilarities() {
         for (Map.Entry<Integer, HashMap<Integer, Float>> entry : data.entrySet()) {
             Integer userID = entry.getKey();
@@ -121,7 +114,7 @@ public class Test {
         HashMap<Integer, Float> userRatingsForItem1 = itemHM.get(item1);
         HashMap<Integer, Float> userRatingsForItem2 = itemHM.get(item2);
         //int count = 0;
-        HashMap<Integer, RatingTuple> userRatingsForTwoItems = new HashMap<Integer, RatingTuple>();
+        HashMap<Integer, RatingTuple> userRatingsForTwoItems = new HashMap<>();
         //System.out.println(userRatingsForTwoItems.size());
 
         for (Integer user : userRatingsForItem1.keySet()) {
@@ -140,7 +133,7 @@ public class Test {
         for (ItemTuple tuple : itemTuples) {
             Float similarity = calculateSimilarityBetweenTwoItems(tuple.item1, tuple.item2);
             similarityTable.put(tuple, similarity);
-            System.out.println("Similarity between item " + tuple.item1 + " and item " + tuple.item2 + ": "+ similarity);
+            System.out.println("Similarity between item " + tuple.item1 + " and item " + tuple.item2 + ": " + similarity);
         }
     }
 
@@ -188,19 +181,29 @@ public class Test {
         for (ItemTuple tuple : itemTuples) {
             Float difference = calculateDifferenceBetweenTwoItems(tuple.item1, tuple.item2);
             differencesTable.put(tuple, difference);
-            System.out.println("Similarity between item " + tuple.item1 + " and item " + tuple.item2 + ": " + difference + " # of differences calculated" + differencesTable.size());
+            System.out.println("Difference between item " + tuple.item1 + " and item " + tuple.item2 + ": " + difference + " # of differences calculated" + differencesTable.size());
         }
     }
 
-    public static Float predict(Integer userID, Integer itemID) {
+
+    public static Float predictSlopeOne(Integer userID, Integer itemID) {
         Float sum = 0.0f;
         int counter = 0;
-        for (Map.Entry<ItemTuple, Float> entry : differencesTable.entrySet()) {
+        for (Integer item : itemHM.keySet()) {
+            if (!item.equals(itemID)) {
+                HashMap<Integer, Float> allUserRatingForItem = itemHM.get(item);
+                Float difference = 0.0f;
+                if (allUserRatingForItem.containsKey(userID)) {
+                    ItemTuple tuple = new ItemTuple(item, itemID);
+                    difference = differencesTable.get(tuple);
+                    System.out.println("Difference smarter for items: " + item + " and " + itemID + " : " + difference);
+                    sum += difference;
+                    counter++;
+                }
+            }
 
-            if (entry.getKey().item2.equals(itemID)) {
-                sum += entry.getValue();
-                counter++;
-                System.out.println("entry: " + entry.getValue());
+            if (Float.isNaN(sum)) {
+                sum = averageRatings.get(userID);
             }
 
         }
@@ -211,51 +214,77 @@ public class Test {
         return averageRatings.get(userID) + sum;
     }
 
-    public static Float predictSmarterRating(Integer userID, Integer itemID) {
-        Float n = 0.0f;
-        Float d = 0.0f;
-        Float pred = 0.0f;
-        ItemTuple myTuple = null;
+    public static Float predictWeightedSlopeOne(Integer userID, Integer itemID) {
+        Float sum = 0.0f;
+        int d = 0;
         for (Integer item : itemHM.keySet()) {
             if (!item.equals(itemID)) {
                 HashMap<Integer, Float> allUserRatingForItem = itemHM.get(item);
-                Float similarity = 0.0f;
-                Float rating = 0.0f;
+                Float difference = 0.0f;
                 if (allUserRatingForItem.containsKey(userID)) {
-
                     ItemTuple tuple = new ItemTuple(item, itemID);
-                    if(similarityTable.containsKey(tuple)){
-                        myTuple = tuple;
-                    }
-                    else
-                    {
-                        myTuple = new ItemTuple(itemID, item);
-                    }
-                    System.out.println(myTuple + " item 1: " + myTuple.item1 + " item 2 " + myTuple.item2);
-
-                    similarity = similarityTable.get(myTuple);
-                    if(similarity > 0) {
-                        rating = allUserRatingForItem.get(userID);
-
-                        System.out.println("Similarity between " + item + " and " + itemID + " is " + similarity);
-                        System.out.println("Rating " + rating);
-                        n = n + (similarity * rating);
-                        d = d + similarity;
-                    }
-
+                    difference = differencesTable.get(tuple);
+                    System.out.println("Difference smarter for items: " + item + " and " + itemID + " : " + difference);
+                    int size = getUserRatingsForTwoItems(item, itemID).size();
+                    sum += difference * size;
+                    d += size;
                 }
             }
-            pred = n / d;
 
-            if (Float.isNaN(pred)) {
-                pred = averageRatings.get(userID);
+            if (Float.isNaN(sum)) {
+                sum = averageRatings.get(userID);
             }
+
         }
+        System.out.println("Denom: " + d);
+        sum = sum / d;
+        System.out.println("sum: " + sum);
+        System.out.println("average: " + averageRatings.get(userID));
+        return averageRatings.get(userID) + sum;
+    }
 
-            return pred;
+    public static Float predictWeightedSlopeOneBasedOnSimilarity(Integer userID, Integer itemID) {
+        Float sum = 0.0f;
+        int d = 0;
+        ItemTuple myTuple = null;
+
+        for (Integer item : itemHM.keySet()) {
+            if (!item.equals(itemID)) {
+                HashMap<Integer, Float> allUserRatingForItem = itemHM.get(item);
+                Float difference = 0.0f;
+
+                if (allUserRatingForItem.containsKey(userID)) {
+                    ItemTuple tuple = new ItemTuple(item, itemID);
+                    Float rating = allUserRatingForItem.get(item);
+                    difference = differencesTable.get(tuple) + rating;
+
+                    ItemTuple tuple1 = new ItemTuple(item, itemID);
+                    ItemTuple tuple2 = new ItemTuple(itemID, item);
+
+                    if (similarityTable.containsKey(tuple1)) {
+                        myTuple = tuple1;
+                    } else if (similarityTable.containsKey(tuple2)) {
+                        myTuple = tuple2;
+                    } else {
+                        break;
+                    }
+                    Float similarity = similarityTable.get(myTuple);
+                    sum += difference * similarity;
+                    d += similarity;
+                }
+            }
+
+            if (Float.isNaN(sum)) {
+                sum = averageRatings.get(userID);
+            }
+
         }
-
-
+        System.out.println("Denom: " + d);
+        sum = sum / d;
+        System.out.println("sum: " + sum);
+        System.out.println("average: " + averageRatings.get(userID));
+        return averageRatings.get(userID) + sum;
+    }
 
     public static void main(String[] args) {
         data = new HashMap<>();
@@ -349,9 +378,9 @@ public class Test {
         itemHM.put(4, itemToUser4);
         itemHM.put(5, itemToUser5);
 
-        getAllItemTuples2();
+        getAllItemTuples();
 
-        /*for (ItemTuple tuple : itemTuples) {
+        for (ItemTuple tuple : itemTuples) {
             System.out.println("item 1: " + tuple.item1 + ", item 2: " + tuple.item2);
         }
 
@@ -360,18 +389,16 @@ public class Test {
             System.out.print(entry.getValue());
         }
 
-
-        System.out.println();
-        System.out.println("Predicted rating for user 1, item 3: " + predictRating(1, 3));
-
-
         System.out.println("1 and 2: " + calculateDifferenceBetweenTwoItems(1, 2));
         System.out.println("4 and 2: " + calculateDifferenceBetweenTwoItems(4, 2));
         System.out.println("5 and 2: " + calculateDifferenceBetweenTwoItems(5, 2));
 
-        System.out.println(predict(1, 2));*/
-        calculateSimilarities();
-        System.out.println("Predicted " + predictSmarterRating(2, 2));
+        System.out.println("Predicted smarter: " + predictSlopeOne(1, 2));
+        System.out.println("Predicted weighted slope one: " + predictWeightedSlopeOne(1, 2));
+        System.out.println("Predicted weighted slope one with similarities: " + predictWeightedSlopeOneBasedOnSimilarity(1, 2));
+
+
+
 
     }
 

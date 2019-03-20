@@ -3,9 +3,11 @@
   <component name="ChangeListManager">
     <list default="true" id="98b922b8-f4fb-4ba5-817e-c0a9ae4beadc" name="Default Changelist" comment="Removed files">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/out/production/Collaborative-Filtering-System/Main2.class" beforeDir="false" afterPath="$PROJECT_DIR$/out/production/Collaborative-Filtering-System/Main2.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/out/production/Collaborative-Filtering-System/Main2.class" beforeDir="false" />
       <change beforePath="$PROJECT_DIR$/out/production/Collaborative-Filtering-System/Test.class" beforeDir="false" afterPath="$PROJECT_DIR$/out/production/Collaborative-Filtering-System/Test.class" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/Main2.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/Main2.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/ItemBased.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/ItemBased.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/Main.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/SlopeOne.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/SlopeOne.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/Test.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/Test.java" afterDir="false" />
     </list>
     <ignored path="$PROJECT_DIR$/out/" />
@@ -26,32 +28,27 @@
   </component>
   <component name="FileEditorManager">
     <leaf SIDE_TABS_SIZE_LIMIT_KEY="300">
-      <file pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/src/Main.java">
-          <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="855">
-              <caret line="63" column="30" selection-start-line="63" selection-start-column="30" selection-end-line="63" selection-end-column="30" />
-            </state>
-          </provider>
-        </entry>
-      </file>
       <file pinned="false" current-in-tab="true">
-        <entry file="file://$PROJECT_DIR$/src/Main2.java">
+        <entry file="file://$PROJECT_DIR$/src/ItemBased.java">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="463">
-              <caret line="280" column="4" selection-start-line="280" selection-start-column="4" selection-end-line="280" selection-end-column="4" />
+            <state relative-caret-position="-345">
+              <caret line="308" column="28" selection-start-line="308" selection-end-line="309" />
               <folding>
                 <element signature="imports" expanded="true" />
+                <element signature="e#22425#22426#0" expanded="true" />
               </folding>
             </state>
           </provider>
         </entry>
       </file>
       <file pinned="false" current-in-tab="false">
-        <entry file="file://$APPLICATION_CONFIG_DIR$/idea.vmoptions">
+        <entry file="file://$PROJECT_DIR$/src/SlopeOne.java">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="90">
-              <caret line="6" column="18" selection-start-line="6" selection-start-column="18" selection-end-line="6" selection-end-column="18" />
+            <state relative-caret-position="182">
+              <caret line="265" column="26" selection-start-line="265" selection-start-column="26" selection-end-line="265" selection-end-column="26" />
+              <folding>
+                <element signature="e#15830#15831#0" expanded="true" />
+              </folding>
             </state>
           </provider>
         </entry>
@@ -59,17 +56,8 @@
       <file pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/src/Test.java">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="1110">
-              <caret line="261" column="35" selection-start-line="261" selection-start-column="28" selection-end-line="261" selection-end-column="35" />
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/src/RatingTuple.java">
-          <provider selected="true" editor-type-id="text-editor">
-            <state>
-              <caret column="13" selection-start-column="13" selection-end-column="13" />
+            <state relative-caret-position="452">
+              <caret line="387" column="63" lean-forward="true" selection-start-line="387" selection-start-column="63" selection-end-line="387" selection-end-column="63" />
             </state>
           </provider>
         </entry>
@@ -80,16 +68,41 @@
     <option name="RECENT_TEMPLATES">
       <list>
         <option value="Class" />
+        <option value="Singleton" />
       </list>
     </option>
   </component>
   <component name="FindInProjectRecents">
     <findStrings>
-      <find>System.out</find>
-      <find>table</find>
-      <find>getallitemtuples</find>
-      <find>getall</find>
-      <find>similarity_tablename</find>
+      <find>populatePredictionsCacheHM</find>
+      <find>populate</find>
+      <find>calculateAll</find>
+      <find>calculateSimilarities</find>
+      <find>smarter</find>
+      <find>tuples</find>
+      <find>SIMILARI</find>
+      <find>SIMILARITYCOPY</find>
+      <find>testset3</find>
+      <find>differe</find>
+      <find>calculated</find>
+      <find>getAll</find>
+      <find>getallitem</find>
+      <find>populatePredictedRatingsTable</find>
+      <find>db.predictAllSmarterRating</find>
+      <find>similar</find>
+      <find>similari</find>
+      <find>populatesimila</find>
+      <find>insert</find>
+      <find>getUser</find>
+      <find>DIFFERENCE</find>
+      <find>getuserra</find>
+      <find>getuserratings</find>
+      <find>itemtuples</find>
+      <find>calculatesimi</find>
+      <find>&lt;</find>
+      <find>predic</find>
+      <find>&lt;</find>
+      <find>getUserRatingsForTwoItems</find>
       <find>predict</find>
     </findStrings>
   </component>
@@ -101,24 +114,30 @@
       <list>
         <option value="$PROJECT_DIR$/src/Main.java" />
         <option value="$PROJECT_DIR$/src/RatingTuple.java" />
-        <option value="$PROJECT_DIR$/src/Test.java" />
         <option value="$APPLICATION_CONFIG_DIR$/idea.vmoptions" />
+        <option value="$PROJECT_DIR$/src/ItemTuple.java" />
+        <option value="$PROJECT_DIR$/src/ItemUserTuple.java" />
+        <option value="$PROJECT_DIR$/src/ItemSimilarityTuple.java" />
+        <option value="$PROJECT_DIR$/src/Main3.java" />
         <option value="$PROJECT_DIR$/src/Main2.java" />
+        <option value="$PROJECT_DIR$/src/ItemBased.java" />
+        <option value="$PROJECT_DIR$/src/ItemBasedSlopeOne.java" />
+        <option value="$PROJECT_DIR$/src/SlopeOne.java" />
+        <option value="$PROJECT_DIR$/src/Test.java" />
       </list>
     </option>
   </component>
-  <component name="ProjectFrameBounds">
-    <option name="x" value="95" />
-    <option name="y" value="65" />
-    <option name="width" value="1511" />
-    <option name="height" value="1007" />
+  <component name="ProjectFrameBounds" fullScreen="true">
+    <option name="x" value="220" />
+    <option name="y" value="242" />
+    <option name="width" value="1487" />
+    <option name="height" value="996" />
   </component>
   <component name="ProjectView">
     <navigator proportions="" version="1">
       <foldersAlwaysOnTop value="true" />
     </navigator>
     <panes>
-      <pane id="PackagesPane" />
       <pane id="ProjectPane">
         <subPane>
           <expand>
@@ -136,23 +155,24 @@
         </subPane>
       </pane>
       <pane id="Scope" />
+      <pane id="PackagesPane" />
     </panes>
   </component>
   <component name="PropertiesComponent">
-    <property name="com.android.tools.idea.instantapp.provision.ProvisionBeforeRunTaskProvider.myTimeStamp" value="1552319450866" />
+    <property name="com.android.tools.idea.instantapp.provision.ProvisionBeforeRunTaskProvider.myTimeStamp" value="1553086737650" />
     <property name="project.structure.last.edited" value="Modules" />
     <property name="project.structure.proportion" value="0.0" />
     <property name="project.structure.side.proportion" value="0.0" />
     <property name="settings.editor.selected.configurable" value="project.propCompiler" />
   </component>
   <component name="RecentsManager">
-    <key name="MoveFile.RECENT_KEYS">
+    <key name="CopyFile.RECENT_KEYS">
       <recent name="$PROJECT_DIR$" />
     </key>
     <key name="CopyClassDialog.RECENTS_KEY">
       <recent name="" />
     </key>
-    <key name="CopyFile.RECENT_KEYS">
+    <key name="MoveFile.RECENT_KEYS">
       <recent name="$PROJECT_DIR$" />
     </key>
   </component>
@@ -169,6 +189,14 @@
     </option>
   </component>
   <component name="RunManager" selected="Application.Test">
+    <configuration name="ItemBased" type="Application" factoryName="Application" temporary="true" nameIsGenerated="true">
+      <option name="MAIN_CLASS_NAME" value="ItemBased" />
+      <module name="Collaborative-Filtering-System" />
+      <option name="VM_PARAMETERS" value="-Xms13000M -Xmx13000M" />
+      <method v="2">
+        <option name="Make" enabled="true" />
+      </method>
+    </configuration>
     <configuration name="Main" type="Application" factoryName="Application" temporary="true" nameIsGenerated="true">
       <option name="MAIN_CLASS_NAME" value="Main" />
       <module name="Collaborative-Filtering-System" />
@@ -176,10 +204,10 @@
         <option name="Make" enabled="true" />
       </method>
     </configuration>
-    <configuration name="Main2" type="Application" factoryName="Application" temporary="true" nameIsGenerated="true">
-      <option name="MAIN_CLASS_NAME" value="Main2" />
+    <configuration name="SlopeOne" type="Application" factoryName="Application" temporary="true" nameIsGenerated="true">
+      <option name="MAIN_CLASS_NAME" value="SlopeOne" />
       <module name="Collaborative-Filtering-System" />
-      <option name="VM_PARAMETERS" value="-Xms12000M -Xmx12000M" />
+      <option name="VM_PARAMETERS" value="-Xms13000M -Xmx13000M" />
       <method v="2">
         <option name="Make" enabled="true" />
       </method>
@@ -192,14 +220,16 @@
       </method>
     </configuration>
     <list>
+      <item itemvalue="Application.ItemBased" />
       <item itemvalue="Application.Main" />
-      <item itemvalue="Application.Main2" />
+      <item itemvalue="Application.SlopeOne" />
       <item itemvalue="Application.Test" />
     </list>
     <recent_temporary>
       <list>
         <item itemvalue="Application.Test" />
-        <item itemvalue="Application.Main2" />
+        <item itemvalue="Application.ItemBased" />
+        <item itemvalue="Application.SlopeOne" />
         <item itemvalue="Application.Main" />
       </list>
     </recent_temporary>
@@ -215,12 +245,12 @@
       <option name="presentableId" value="Default" />
       <updated>1551290966421</updated>
     </task>
-    <task id="LOCAL-00001" summary="Removed files">
-      <created>1551881469869</created>
+    <task id="LOCAL-00001" summary="Predicting smarter ratings">
+      <created>1553012915247</created>
       <option name="number" value="00001" />
       <option name="presentableId" value="LOCAL-00001" />
       <option name="project" value="LOCAL" />
-      <updated>1551881469869</updated>
+      <updated>1553012915247</updated>
     </task>
     <task id="LOCAL-00002" summary="Removed files">
       <created>1551881507673</created>
@@ -236,13 +266,14 @@
       <option name="project" value="LOCAL" />
       <updated>1551881737535</updated>
     </task>
+    <option name="localTasksCounter" value="2" />
     <servers />
   </component>
   <component name="ToolWindowManager">
-    <frame x="95" y="65" width="1511" height="1007" extended-state="0" />
+    <frame x="0" y="0" width="1920" height="1200" extended-state="0" />
     <editor active="true" />
     <layout>
-      <window_info active="true" content_ui="combo" id="Project" order="0" visible="true" weight="0.35125935" />
+      <window_info content_ui="combo" id="Project" order="0" visible="true" weight="0.1256656" />
       <window_info id="Structure" order="1" side_tool="true" weight="0.25" />
       <window_info id="Image Layers" order="2" />
       <window_info id="Designer" order="3" />
@@ -250,16 +281,16 @@
       <window_info id="Capture Tool" order="5" />
       <window_info id="Favorites" order="6" side_tool="true" />
       <window_info anchor="bottom" id="Message" order="0" />
-      <window_info anchor="bottom" id="Find" order="1" weight="0.32896176" />
-      <window_info anchor="bottom" id="Run" order="2" sideWeight="0.49965963" visible="true" weight="0.30491802" />
+      <window_info anchor="bottom" id="Find" order="1" weight="0.3283186" />
+      <window_info anchor="bottom" id="Run" order="2" sideWeight="0.49965963" weight="0.29911503" />
       <window_info anchor="bottom" id="Debug" order="3" weight="0.4" />
       <window_info anchor="bottom" id="Cvs" order="4" weight="0.25" />
       <window_info anchor="bottom" id="Inspection" order="5" weight="0.4" />
       <window_info anchor="bottom" id="TODO" order="6" />
       <window_info anchor="bottom" id="Terminal" order="7" />
-      <window_info anchor="bottom" id="Event Log" order="8" sideWeight="0.50034034" side_tool="true" weight="0.30491802" />
-      <window_info anchor="bottom" id="Version Control" order="9" />
-      <window_info anchor="bottom" id="Messages" order="10" weight="0.32963988" />
+      <window_info anchor="bottom" id="Event Log" order="8" sideWeight="0.50034034" side_tool="true" weight="0.30420354" />
+      <window_info anchor="bottom" id="Version Control" order="9" weight="0.32920355" />
+      <window_info anchor="bottom" id="Messages" order="10" weight="0.3283186" />
       <window_info anchor="right" id="Commander" order="0" weight="0.4" />
       <window_info anchor="right" id="Ant Build" order="1" weight="0.25" />
       <window_info anchor="right" content_ui="combo" id="Hierarchy" order="2" weight="0.25" />
@@ -270,6 +301,10 @@
       <window_info anchor="right" id="Palette&#9;" order="7" />
       <window_info anchor="right" id="Coverage" order="8" side_tool="true" weight="0.32947582" />
     </layout>
+  </component>
+  <component name="VcsManagerConfiguration">
+    <MESSAGE value="Predicting smarter ratings" />
+    <option name="LAST_COMMIT_MESSAGE" value="Predicting smarter ratings" />
   </component>
   <component name="editorHistoryManager">
     <entry file="jar://$USER_HOME$/Downloads/sqlite4java-392/sqlite4java.jar!/com/almworks/sqlite4java/SQLiteStatement.class">
@@ -286,13 +321,6 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/src/Main.java">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="855">
-          <caret line="63" column="30" selection-start-line="63" selection-start-column="30" selection-end-line="63" selection-end-column="30" />
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$APPLICATION_CONFIG_DIR$/idea.vmoptions">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="90">
@@ -300,26 +328,77 @@
         </state>
       </provider>
     </entry>
+    <entry file="file://$PROJECT_DIR$/src/ItemTuple.java">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="360">
+          <caret line="24" column="5" selection-start-line="7" selection-start-column="4" selection-end-line="24" selection-end-column="5" />
+          <folding>
+            <element signature="e#564#565#0" expanded="true" />
+            <element signature="e#613#614#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/ItemUserTuple.java">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="300">
+          <caret line="20" selection-start-line="20" selection-end-line="20" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/Main3.java" />
     <entry file="file://$PROJECT_DIR$/src/RatingTuple.java">
       <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="75">
+          <caret line="5" column="11" selection-start-line="5" selection-start-column="11" selection-end-line="5" selection-end-column="11" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/ItemSimilarityTuple.java">
+      <provider selected="true" editor-type-id="text-editor">
         <state>
-          <caret column="13" selection-start-column="13" selection-end-column="13" />
+          <caret column="12" selection-start-column="12" selection-end-column="12" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/Main.java">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="914">
+          <caret line="198" selection-start-line="198" selection-end-line="198" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/ItemBasedSlopeOne.java">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="-4208">
+          <caret line="29" column="7" lean-forward="true" selection-start-line="29" selection-start-column="7" selection-end-line="29" selection-end-column="7" />
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/src/Test.java">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="1110">
-          <caret line="261" column="35" selection-start-line="261" selection-start-column="28" selection-end-line="261" selection-end-column="35" />
+        <state relative-caret-position="452">
+          <caret line="387" column="63" lean-forward="true" selection-start-line="387" selection-start-column="63" selection-end-line="387" selection-end-column="63" />
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/src/Main2.java">
+    <entry file="file://$PROJECT_DIR$/src/SlopeOne.java">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="463">
-          <caret line="280" column="4" selection-start-line="280" selection-start-column="4" selection-end-line="280" selection-end-column="4" />
+        <state relative-caret-position="182">
+          <caret line="265" column="26" selection-start-line="265" selection-start-column="26" selection-end-line="265" selection-end-column="26" />
+          <folding>
+            <element signature="e#15830#15831#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/ItemBased.java">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="-345">
+          <caret line="308" column="28" selection-start-line="308" selection-end-line="309" />
           <folding>
             <element signature="imports" expanded="true" />
+            <element signature="e#22425#22426#0" expanded="true" />
           </folding>
         </state>
       </provider>
