@@ -21,7 +21,8 @@ public class SlopeOne {
     public HashMap<ItemTuple, Float> differencesTable = new HashMap<>();
     public HashMap<ItemUserTuple, Float> predictedRatings = new HashMap<>();
     public HashMap<ItemTuple, Float> similarityTable = new HashMap<>();
-    final String similarity_tablename = "SIMILARITYCOPY";
+    final String similarity_tablename = "SIMILARITYCOPY2";
+    final String predictions_tablename = "PREDICTIONSLOPEONE";
     //public HashMap<ItemTuple, Float> similarityTable1 = new HashMap<>();
     public ArrayList<RatingTuple> ratingTuples = new ArrayList<>();
     //int count2 = 0;
@@ -184,6 +185,9 @@ public class SlopeOne {
     }
 
     public void calculateAllDifferences() {
+        // Get all item tuples from table for which differences have to be computed.
+        gettAllItemTuplesFromTable();
+
         int stepSize = 1000000;
         int counter = 0;
         for (ItemTuple tuple : itemTuples) {
@@ -194,11 +198,40 @@ public class SlopeOne {
                 System.out.println("Difference between item " + tuple.item1 + " and item " + tuple.item2 + ": " + difference + " # of differences calculated" + differencesTable.size());
             }
         }
+        try {
+            populateDifferenceTable();
+        } catch (SQLiteException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public void predictAllSlopeOneRatings() throws SQLiteException {
+        int stepSize = 1000;
+        int counter = 0;
+        for (Entry<ItemUserTuple, Float> entry : predictedRatings.entrySet()) {
+            Integer userID = entry.getKey().userID;
+            Integer itemID = entry.getKey().itemID;
+            Float pred = predictWeightedSlopeOneBasedOnSimilarity(userID, itemID);
+            if (pred < 1.0f) {
+                pred = 1.0f;
+            } else if (pred > 5.0f) {
+                pred = 5.0f;
+            }
+            counter++;
+            predictedRatings.replace(entry.getKey(), pred);
+            if (counter % stepSize == 0) {
+                System.out.println(("Prediction: " + pred) + " and num of pred ratings so far: " + counter);
+            }
+        }
+        System.out.println("Size: " + predictedRatings.size());
+        populatePredictedRatingsTable();
     }
 
     public Float predictSlopeOne(Integer userID, Integer itemID) {
         Float sum = 0.0f;
         int counter = 0;
+        Float pred = 0.0f;
+
         for (Integer item : itemHM.keySet()) {
             if (!item.equals(itemID)) {
                 HashMap<Integer, Float> allUserRatingForItem = itemHM.get(item);
@@ -206,57 +239,116 @@ public class SlopeOne {
                 if (allUserRatingForItem.containsKey(userID)) {
                     ItemTuple tuple = new ItemTuple(item, itemID);
                     difference = differencesTable.get(tuple);
-                    System.out.println("Difference smarter for items: " + item + " and " + itemID + " : " + difference);
+                    //System.out.println("Difference smarter for items: " + item + " and " + itemID + " : " + difference);
                     sum += difference;
                     counter++;
                 }
             }
-
-            if (Float.isNaN(sum)) {
-                sum = averageRatings.get(userID);
-            }
-
         }
-        System.out.println("Counter: " + counter);
-        sum = sum / counter;
-        System.out.println("sum: " + sum);
-        System.out.println("average: " + averageRatings.get(userID));
-        return averageRatings.get(userID) + sum;
+        //System.out.println("Counter: " + counter);
+        pred = sum / counter;
+
+        if (Float.isNaN(pred)) {
+            return averageRatings.get(userID);
+        }
+        else{
+            pred += averageRatings.get(userID);
+            return pred;
+        }
+        //System.out.println("sum: " + sum);
+        //System.out.println("average: " + averageRatings.get(userID));
+    }
+
+    public void createPredictionTable(String tablename) {
+        System.out.println("Creating/clearing similarity table " + tablename);
+        // create the table if it does not exist
+        try {
+            c.exec("CREATE TABLE IF NOT EXISTS " + tablename + "(UserID INT, ItemID INT, Predicted REAL)");
+            // delete entries from table in case it does exist
+            c.exec("DELETE FROM " + tablename);
+
+            System.out.println("Done");
+        } catch (SQLiteException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public void populatePredictedRatingsTable() throws SQLiteException {
+        createPredictionTable(predictions_tablename);
+        SQLiteStatement statSim = c.prepare("INSERT INTO " + predictions_tablename + "  VALUES (?,?,?)");
+
+        c.exec("BEGIN");
+
+        System.out.println("Size" + predictedRatings.size());
+
+        for (Entry<ItemUserTuple, Float> entry : predictedRatings.entrySet()) {
+
+            Integer userID = entry.getKey().userID;
+            Integer itemID = entry.getKey().itemID;
+            Float prediction = entry.getValue();
+            System.out.println(userID + " ," + itemID + " ," + prediction);
+
+            statSim.bind(1, userID);
+            statSim.bind(2, itemID);
+            if (prediction.equals(null)) {
+                statSim.bind(3, 0);
+
+            } else {
+                statSim.bind(3, prediction);
+            }
+            statSim.stepThrough();
+            statSim.reset();
+        }
+
+        System.out.println("Predicted ratings inserted into table");
+        // now do the commit part to save the changes to file
+        c.exec("COMMIT");
+
     }
 
     public Float predictWeightedSlopeOne(Integer userID, Integer itemID) {
         Float sum = 0.0f;
         int d = 0;
+        Float pred = 0.0f;
         for (Integer item : itemHM.keySet()) {
             if (!item.equals(itemID)) {
                 HashMap<Integer, Float> allUserRatingForItem = itemHM.get(item);
                 Float difference = 0.0f;
                 if (allUserRatingForItem.containsKey(userID)) {
                     ItemTuple tuple = new ItemTuple(item, itemID);
+                    Float rating = allUserRatingForItem.get(userID);
                     difference = differencesTable.get(tuple);
                     System.out.println("Difference smarter for items: " + item + " and " + itemID + " : " + difference);
                     int size = getUserRatingsForTwoItems(item, itemID).size();
+                    System.out.println("Size: " + size);
                     sum += difference * size;
+                    System.out.println("Weighted Sum: " + sum);
                     d += size;
                 }
             }
-
-            if (Float.isNaN(sum)) {
-                sum = averageRatings.get(userID);
-            }
-
         }
         System.out.println("Denom: " + d);
-        sum = sum / d;
-        System.out.println("sum: " + sum);
-        System.out.println("average: " + averageRatings.get(userID));
-        return averageRatings.get(userID) + sum;
+        pred = sum / d;
+
+        if (Float.isNaN(pred)) {
+            return averageRatings.get(userID);
+        }
+        else{
+            pred += averageRatings.get(userID);
+
+            System.out.println("sum: " + sum);
+            System.out.println("average: " + averageRatings.get(userID));
+
+            return pred;
+        }
+
     }
 
     public Float predictWeightedSlopeOneBasedOnSimilarity(Integer userID, Integer itemID) {
         Float sum = 0.0f;
-        int d = 0;
+        Float d = 0.0f;
         ItemTuple myTuple = null;
+        Float pred = 0.0f;
 
         for (Integer item : itemHM.keySet()) {
             if (!item.equals(itemID)) {
@@ -264,36 +356,42 @@ public class SlopeOne {
                 Float difference = 0.0f;
 
                 if (allUserRatingForItem.containsKey(userID)) {
-                    ItemTuple tuple = new ItemTuple(item, itemID);
-                    Float rating = allUserRatingForItem.get(item);
-                    difference = differencesTable.get(tuple) + rating;
 
-                    ItemTuple tuple1 = new ItemTuple(item, itemID);
+                    ItemTuple tuple = new ItemTuple(item, itemID);
                     ItemTuple tuple2 = new ItemTuple(itemID, item);
 
-                    if (similarityTable.containsKey(tuple1)) {
-                        myTuple = tuple1;
+                    Float rating = allUserRatingForItem.get(userID);
+                    if (similarityTable.containsKey(tuple)) {
+                        myTuple = tuple;
                     } else if (similarityTable.containsKey(tuple2)) {
                         myTuple = tuple2;
                     } else {
                         break;
                     }
                     Float similarity = similarityTable.get(myTuple);
-                    sum += difference * similarity;
-                    d += similarity;
+
+                    if (similarity > 0) {
+                        difference = differencesTable.get(tuple) + rating;
+                        sum += difference * similarity;
+                        d += similarity;
+                    }
                 }
             }
 
-            if (Float.isNaN(sum)) {
-                sum = averageRatings.get(userID);
-            }
-
         }
-        System.out.println("Denom: " + d);
-        sum = sum / d;
-        System.out.println("sum: " + sum);
-        System.out.println("average: " + averageRatings.get(userID));
-        return averageRatings.get(userID) + sum;
+        //System.out.println("Denom: " + d);
+        pred = sum / d;
+
+        if (Float.isNaN(pred)) {
+            return averageRatings.get(userID);
+        }
+        else
+        {
+            //System.out.println("sum: " + sum);
+            //System.out.println("average: " + averageRatings.get(userID));
+            //System.out.println("Sim table size " + similarityTable.size());
+            return pred;
+        }
     }
 
     public void populateSimilarityHM() {
@@ -357,9 +455,9 @@ public class SlopeOne {
 
     }
 
-    public void populateDifferenceHM(String tablename) {
+    public void populateDifferenceHM() {
         try {
-            SQLiteStatement stat = c.prepare("SELECT * FROM " + tablename);
+            SQLiteStatement stat = c.prepare("SELECT * FROM DIFFERENCECOPY");
 
             while (stat.step()) {
                 Integer item1 = stat.columnInt(0);
@@ -371,7 +469,7 @@ public class SlopeOne {
                 differencesTable.put(tuple, diff);
                 //System.out.println("Similarity: " + similarity);
             }
-            System.out.println("Loaded similarity table HM from database. Size: " + differencesTable.size());
+            System.out.println("Loaded difference table HM from database. Size: " + differencesTable.size());
             stat.dispose();
 
         } catch (SQLiteException e) {
@@ -425,10 +523,12 @@ public class SlopeOne {
         db.populateItemHM();
         db.populateUserHM();
         db.populateAveragesInMap();
-        db.gettAllItemTuplesFromTable();
-        db.calculateAllDifferences();
-        db.populateDifferenceTable();
-        //db.getUserRatingsForTwoItems(2, 1);
+        //db.calculateAllDifferences();
+        db.populateSimilarityHM();
+        db.populateDifferenceHM();
+        db.populatePredictedRatingsHM();
+        db.predictAllSlopeOneRatings();
+
         db.finish();
         long stopTime = System.currentTimeMillis();
         long elapsedTime = stopTime - startTime;

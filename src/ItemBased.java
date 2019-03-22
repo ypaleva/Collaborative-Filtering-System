@@ -26,7 +26,7 @@ public class ItemBased {
     final String trainingset_tablename = "TRAININGSET";
     final String predictedRatings_tablename = "TESTSET3";
     final String predictions_tablename = "PREDICTION2";
-    final String similarity_tablename = "SIMILARITYCOPY";
+    final String similarity_tablename = "SIMILARITYCOPY2";
     public SQLiteConnection c;
     public HashMap<Integer, Float> averageRatings = new HashMap<>();
     public List<ItemTuple> itemTuples = new ArrayList<>();
@@ -325,9 +325,9 @@ public class ItemBased {
                     }
                     similarity = similarityTable.get(myTuple);
                     //if(similarity > 0) {
-                        rating = allUserRatingForItem.get(userID);
-                        n = n + (similarity * rating);
-                        d = d + similarity;
+                    rating = allUserRatingForItem.get(userID);
+                    n = n + (similarity * rating);
+                    d = d + similarity;
                     //}
 
                 }
@@ -566,6 +566,65 @@ public class ItemBased {
             error(e);
         }
     }
+
+    public Float predictSmartestRating(Integer userID, Integer itemID, int K) {
+        Float n = 0.0f;
+        Float d = 0.0f;
+        Float pred = 0.0f;
+        ItemTuple myTuple = null;
+        ArrayList<SimilarityRatingTuple> tuples = new ArrayList<>();
+        for (Integer item : itemHM.keySet()) {
+            if (!item.equals(itemID)) {
+                HashMap<Integer, Float> allUserRatingForItem = itemHM.get(item);
+                Float similarity = 0.0f;
+                Float rating = 0.0f;
+                if (allUserRatingForItem.containsKey(userID)) {
+
+                    ItemTuple tuple1 = new ItemTuple(item, itemID);
+                    ItemTuple tuple2 = new ItemTuple(itemID, item);
+                    if (similarityTable.containsKey(tuple1)) {
+                        myTuple = tuple1;
+                    } else if (similarityTable.containsKey(tuple2)) {
+                        myTuple = tuple2;
+                    } else {
+                        break;
+                    }
+                    similarity = similarityTable.get(myTuple);
+                    //if(similarity > 0) {
+                    rating = allUserRatingForItem.get(userID);
+                    //}
+                    tuples.add(new SimilarityRatingTuple(similarity, rating));
+                }
+            }
+            if (tuples.size() > K) {
+                Collections.sort(tuples, (s1, s2) -> {
+                    if (s1.similarity > s2.similarity) {
+                        return 1;
+                    } else if (s1.similarity < s2.similarity) {
+                        return -1;
+                    } else {
+                        return 0;
+                    }
+                });
+
+                for (SimilarityRatingTuple tuple : tuples) {
+
+                    n = n + (tuple.similarity * tuple.rating);
+                    d = d + tuple.similarity;
+
+                    pred = n / d;
+
+                }
+            }
+
+
+            if (Float.isNaN(pred)) {
+                pred = averageRatings.get(userID);
+            }
+        }
+        return pred;
+    }
+
 
     /**
      * Show error message.
