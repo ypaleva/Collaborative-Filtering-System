@@ -486,23 +486,75 @@ public class ItemBased {
 
         SQLiteStatement statSim = c.prepare("INSERT INTO " + tablename + "  VALUES (?,?,?)");
 
-        c.exec("BEGIN");
+        HashMap<ItemTuple, Float> mySimilarityTable = new HashMap<>();
 
-        for (Entry<ItemTuple, Float> entry : similarityTable.entrySet()) {
+        int stepSize = 1000;
+        int counter = 0;
 
-            ItemTuple tuple = entry.getKey();
-            Float similarity = entry.getValue();
+        for (ItemTuple tuple : itemTuples) {
 
-            // select whether to put it in the getUserRatingsForTwoItems or training set
-            statSim.bind(1, tuple.item1);
-            statSim.bind(2, tuple.item2);
-            statSim.bind(3, similarity);
-            statSim.stepThrough();
-            statSim.reset();
+            Float similarity = calculateSimilarityBetweenTwoItems(tuple.item1, tuple.item2);
+            mySimilarityTable.put(tuple, similarity);
+            counter++;
+
+            if (counter % stepSize == 0) {
+
+                System.out.println("Number of similarities calculated so far: " + counter);
+                c.exec("BEGIN");
+                for (Entry<ItemTuple, Float> entry : mySimilarityTable.entrySet()) {
+
+
+                    ItemTuple tuple2 = entry.getKey();
+                    Float similarity2 = entry.getValue();
+
+     /Library/Java/JavaVirtualMachines/jdk1.8.0_101.jdk/Contents/Home/bin/java -Xms50G -Xmx50G "-javaagent:/Applications/IntelliJ IDEA CE.app/Contents/lib/idea_rt.jar=56298:/Applications/IntelliJ IDEA CE.app/Contents/bin" -Dfile.encoding=UTF-8 -classpath /Library/Java/JavaVirtualMachines/jdk1.8.0_101.jdk/Contents/Home/jre/lib/charsets.jar:/Library/Java/JavaVirtualMachines/jdk1.8.0_101.jdk/Contents/Home/jre/lib/deploy.jar:/Library/Java/JavaVirtualMachines/jdk1.8.0_101.jdk/Contents/Home/jre/lib/ext/cldrdata.jar:/Library/Java/JavaVirtualMachines/jdk1.8.0_101.jdk/Contents/Home/jre/lib/ext/dnsns.jar:/Library/Java/JavaVirtualMachines/jdk1.8.0_101.jdk/Contents/Home/jre/lib/ext/jaccess.jar:/Library/Java/JavaVirtualMachines/jdk1.8.0_101.jdk/Contents/Home/jre/lib/ext/jfxrt.jar:/Library/Java/JavaVirtualMachines/jdk1.8.0_101.jdk/Contents/Home/jre/lib/ext/localedata.jar:/Library/Java/JavaVirtualMachines/jdk1.8.0_101.jdk/Contents/Home/jre/lib/ext/nashorn.jar:/Library/Java/JavaVirtualMachines/jdk1.8.0_101.jdk/Contents/Home/jre/lib/ext/sunec.jar:/Library/Java/JavaVirtualMachines/jdk1.8.0_101.jdk/Contents/Home/jre/lib/ext/sunjce_provider.jar:/Library/Java/JavaVirtualMachines/jdk1.8.0_101.jdk/Contents/Home/jre/lib/ext/sunpkcs11.jar:/Library/Java/JavaVirtualMachines/jdk1.8.0_101.jdk/Contents/Home/jre/lib/ext/zipfs.jar:/Library/Java/JavaVirtualMachines/jdk1.8.0_101.jdk/Contents/Home/jre/lib/javaws.jar:/Library/Java/JavaVirtualMachines/jdk1.8.0_101.jdk/Contents/Home/jre/lib/jce.jar:/Library/Java/JavaVirtualMachines/jdk1.8.0_101.jdk/Contents/Home/jre/lib/jfr.jar:/Library/Java/JavaVirtualMachines/jdk1.8.0_101.jdk/Contents/Home/jre/lib/jfxswt.jar:/Library/Java/JavaVirtualMachines/jdk1.8.0_101.jdk/Contents/Home/jre/lib/jsse.jar:/Library/Java/JavaVirtualMachines/jdk1.8.0_101.jdk/Contents/Home/jre/lib/management-agent.jar:/Library/Java/JavaVirtualMachines/jdk1.8.0_101.jdk/Contents/Home/jre/lib/plugin.jar:/Library/Java/JavaVirtualMachines/jdk1.8.0_101.jdk/Contents/Home/jre/lib/resources.jar:/Library/Java/JavaVirtualMachines/jdk1.8.0_101.jdk/Contents/Home/jre/lib/rt.jar:/Library/Java/JavaVirtualMachines/jdk1.8.0_101.jdk/Contents/Home/lib/ant-javafx.jar:/Library/Java/JavaVirtualMachines/jdk1.8.0_101.jdk/Contents/Home/lib/dt.jar:/Library/Java/JavaVirtualMachines/jdk1.8.0_101.jdk/Contents/Home/lib/javafx-mx.jar:/Library/Java/JavaVirtualMachines/jdk1.8.0_101.jdk/Contents/Home/lib/jconsole.jar:/Library/Java/JavaVirtualMachines/jdk1.8.0_101.jdk/Contents/Home/lib/packager.jar:/Library/Java/JavaVirtualMachines/jdk1.8.0_101.jdk/Contents/Home/lib/sa-jdi.jar:/Library/Java/JavaVirtualMachines/jdk1.8.0_101.jdk/Contents/Home/lib/tools.jar:/Users/Delala/git/Collaborative-Filtering-System/out/production/Collaborative-Filtering-System:/Users/Delala/Downloads/sqlite4java-392/sqlite4java.jar ItemBased
+                    objc[23174]: Class JavaLaunchHelper is implemented in both /Library/Java/JavaVirtualMachines/jdk1.8.0_101.jdk/Contents/Home/bin/java (0x10e0cc4c0) and /Library/Java/JavaVirtualMachines/jdk1.8.0_101.jdk/Contents/Home/jre/lib/libinstrument.dylib (0x10e1464e0). One of the two will be used. Which one is undefined.
+                    Mar 23, 2019 6:37:05 PM com.almworks.sqlite4java.Internal log
+                    INFO: [sqlite] DB[1]: instantiated [comp3208.db]
+                    Mar 23, 2019 6:37:05 PM com.almworks.sqlite4java.Internal log
+                    INFO: [sqlite] Internal: loaded sqlite4java-osx from /Users/Delala/Downloads/sqlite4java-392/libsqlite4java-osx.dylib
+                    Mar 23, 2019 6:37:05 PM com.almworks.sqlite4java.Internal log
+                    INFO: [sqlite] Internal: loaded sqlite 3.8.7, wrapper 1.3
+                    Mar 23, 2019 6:37:05 PM com.almworks.sqlite4java.Internal log
+                    INFO: [sqlite] DB[1]: opened
+                    Opened database successfully
+                    Loading itemHM from table BIGTRAININGSET
+                    Loaded 19000251 ratings from 26543 items.
+                            Loading userHM from table BIGTRAININGSET
+                    Loaded 19000251 ratings from 138494 users.
+                            Averages populated in map
+                    Loading item tuples from table SIMILARITYBIG
+                    // select whether to put it in the getUserRatingsForTwoItems or training set
+                    statSim.bind(1, tuple.item1);
+                    statSim.bind(2, tuple.item2);
+                    statSim.bind(3, similarity);
+                    statSim.stepThrough();
+                    statSim.reset();
+                }
+                c.exec("COMMIT");
+                System.out.println("Chunk written to table.");
+                mySimilarityTable.clear();
+            }
         }
 
+        //System.out.println("Similarities calculated with sim table size: " + similarityTable.size());
+        //c.exec("BEGIN");
+
+//        for (Entry<ItemTuple, Float> entry : similarityTable.entrySet()) {
+//
+//            //ItemTuple tuple = entry.getKey();
+//            //Float similarity = entry.getValue();
+//
+//            // select whether to put it in the getUserRatingsForTwoItems or training set
+//            statSim.bind(1, tuple.item1);
+//            statSim.bind(2, tuple.item2);
+//            statSim.bind(3, similarity);
+//            statSim.stepThrough();
+//            statSim.reset();
+//        }
+
         // now do the commit part to save the changes to file
-        c.exec("COMMIT");
+        //c.exec("COMMIT");
 
     }
 
@@ -658,7 +710,7 @@ public class ItemBased {
         //db.createTestTrainingSet();
         db.populateAveragesInMap();
         db.gettAllItemTuplesFromTable();
-        db.calculateSimilarities();
+        //db.calculateSimilarities();
         db.populateSimilarityTable("SIMILARITYBIG2");
         // * db.populateSimilarityHM();
         // * db.populatePredictedRatingsHM();
