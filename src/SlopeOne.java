@@ -396,7 +396,7 @@ public class SlopeOne {
 
     public void populateSimilarityHM() {
         try {
-            SQLiteStatement stat = c.prepare("SELECT * FROM " + similarity_tablename);
+            SQLiteStatement stat = c.prepare("SELECT Item1, Item2, Sim FROM SIMDIFF2");
 
             while (stat.step()) {
                 Integer item1 = stat.columnInt(0);
@@ -457,7 +457,7 @@ public class SlopeOne {
 
     public void populateDifferenceHM() {
         try {
-            SQLiteStatement stat = c.prepare("SELECT * FROM DIFFERENCECOPY");
+            SQLiteStatement stat = c.prepare("SELECT Item1, Item2, Diff FROM SIMDIFF2");
 
             while (stat.step()) {
                 Integer item1 = stat.columnInt(0);
@@ -524,8 +524,8 @@ public class SlopeOne {
         db.populateUserHM();
         db.populateAveragesInMap();
         //db.calculateAllDifferences();
-        db.populateSimilarityHM();
         db.populateDifferenceHM();
+        db.populateSimilarityHM();
         db.populatePredictedRatingsHM();
         db.predictAllSlopeOneRatings();
 

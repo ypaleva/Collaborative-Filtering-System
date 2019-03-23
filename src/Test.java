@@ -135,7 +135,7 @@ public class Test {
         for (ItemTuple tuple : itemTuples2) {
             Float similarity = calculateSimilarityBetweenTwoItems(tuple.item1, tuple.item2);
             similarityTable.put(tuple, similarity);
-            //System.out.println("Similarity between item " + tuple.item1 + " and item " + tuple.item2 + ": " + similarity);
+            System.out.println("Similarity between item " + tuple.item1 + " and item " + tuple.item2 + ": " + similarity);
         }
     }
 
@@ -496,14 +496,16 @@ public class Test {
         itemHM.put(4, itemToUser4);
         itemHM.put(5, itemToUser5);
 
+        //getAllItemTuples2();
+        //getAllItemTuples();
         getAllItemTuples2();
-        getAllItemTuples();
+        calculateSimilarities();
 
         //for (ItemTuple tuple : itemTuples) {
         //    System.out.println("item 1: " + tuple.item1 + ", item 2: " + tuple.item2);
         //}
-        calculateSimilarities();
-        calculateAllDifferences();
+        //calculateSimilarities();
+        //calculateAllDifferences();
         //for (Map.Entry<ItemTuple, Float> entry : differencesTable.entrySet()) {
         //    System.out.print(entry.getValue());
         //}
@@ -538,7 +540,7 @@ public class Test {
         }
 */
         //System.out.println(predictSmartestRating(1, 2, 1));
-        System.out.println(predictSlopeOne(1, 3));
+        //System.out.println(predictSlopeOne(1, 3));
 
     }
 

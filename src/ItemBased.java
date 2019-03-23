@@ -23,10 +23,10 @@ import java.lang.*;
 public class ItemBased {
     final String database_filename = "comp3208.db";
     //final String trainingset_tablename = "TRAININGSET";
-    final String trainingset_tablename = "TRAININGSET";
+    final String trainingset_tablename = "BIGTRAININGSET";
     final String predictedRatings_tablename = "TESTSET3";
     final String predictions_tablename = "PREDICTION2";
-    final String similarity_tablename = "SIMILARITYCOPY2";
+    final String similarity_tablename = "SIMILARITYBIG";
     public SQLiteConnection c;
     public HashMap<Integer, Float> averageRatings = new HashMap<>();
     public List<ItemTuple> itemTuples = new ArrayList<>();
@@ -156,12 +156,12 @@ public class ItemBased {
         for (Integer user : userRatingsForItem1.keySet()) {
             if (userRatingsForItem2.containsKey(user)) {
                 userRatingsForTwoItems.put(user, new RatingTuple(userRatingsForItem1.get(user), userRatingsForItem2.get(user)));
-                System.out.println("User : " + user + " Rating for item 1: " + userRatingsForItem1.get(user) + " Rating for item 2: " + userRatingsForItem2.get(user));
+                //System.out.println("User : " + user + " Rating for item 1: " + userRatingsForItem1.get(user) + " Rating for item 2: " + userRatingsForItem2.get(user));
                 //count++;
 
             }
         }
-        System.out.println("Number of users who have rated the same item: " + userRatingsForTwoItems.size());
+        //System.out.println("Number of users who have rated the same item: " + userRatingsForTwoItems.size());
         return userRatingsForTwoItems;
     }
 
@@ -200,7 +200,7 @@ public class ItemBased {
             Float p = f1 * f2;
             sum += p;
         }
-        System.out.println("Nominator is: " + sum);
+        //System.out.println("Nominator is: " + sum);
         return sum;
     }
 
@@ -212,7 +212,7 @@ public class ItemBased {
 
         for (Integer user : userRatingsForTwoItems.keySet()) {
             Float userAverageRating = averageRatings.get(user);
-            System.out.println("Average: " + userAverageRating);
+            //System.out.println("Average: " + userAverageRating);
             Float f1 = userRatingsForTwoItems.get(user).getRating1() - userAverageRating;
             Float f2 = userRatingsForTwoItems.get(user).getRating2() - userAverageRating;
             sum1 += (float) Math.pow(f1, 2);
@@ -220,7 +220,7 @@ public class ItemBased {
         }
 
         prod = (float) Math.sqrt(sum1) * (float) Math.sqrt(sum2);
-        System.out.println("Denominator is: " + prod);
+        //System.out.println("Denominator is: " + prod);
         return prod;
     }
 
@@ -229,7 +229,7 @@ public class ItemBased {
         Float denominator = calculateDenominatorForSimilarityFunction(item1, item2);
 
         Float similarity = numerator / denominator;
-        System.out.println("Similarity bw item " + item1 + " and item " + item2 + " is: " + similarity);
+        //System.out.println("Similarity bw item " + item1 + " and item " + item2 + " is: " + similarity);
         return similarity;
 
     }
@@ -252,15 +252,15 @@ public class ItemBased {
     public void gettAllItemTuplesFromTable() {
         System.out.println("Loading item tuples from table " + similarity_tablename);
         try {
-            SQLiteStatement stat = c.prepare("SELECT * FROM " + similarity_tablename);
+            SQLiteStatement stat = c.prepare("SELECT ItemID1, ItemID2 FROM " + similarity_tablename);
             int count = 0;
             while (stat.step()) {
-                Integer itemID1 = stat.columnInt(1);
-                Integer itemID2 = stat.columnInt(2);
+                Integer itemID1 = stat.columnInt(0);
+                Integer itemID2 = stat.columnInt(1);
                 ItemTuple itemTuple = new ItemTuple(itemID1, itemID2);
                 itemTuples.add(itemTuple);
                 count++;
-                System.out.println("Added " + itemID1 + " and " + itemID2 + " with total of " + itemTuples.size());
+                //System.out.println("Added " + itemID1 + " and " + itemID2 + " with total of " + itemTuples.size());
             }
             stat.dispose();
             System.out.println("Loaded " + itemTuples.size() + "tuples");
@@ -272,11 +272,18 @@ public class ItemBased {
     }
 
     public void calculateSimilarities() {
+        int stepSize = 1000;
+        int counter = 0;
         for (ItemTuple tuple : itemTuples) {
             Float similarity = calculateSimilarityBetweenTwoItems(tuple.item1, tuple.item2);
             similarityTable.put(tuple, similarity);
-            System.out.println("Similarity between item " + tuple.item1 + " and item " + tuple.item2 + ": " + similarity + " # of similarities calculated" + similarityTable.size());
+            counter++;
+            if (counter % stepSize == 0) {
+                System.out.println("Similarity between item " + tuple.item1 + " and item " + tuple.item2 + ": " + similarity + " # of similarities calculated" + similarityTable.size());
+            }
         }
+
+        System.out.println("Similarities calculated with sim table size: " + similarityTable.size());
     }
 
     public void predictAllSmarterRatings() throws SQLiteException {
@@ -650,13 +657,13 @@ public class ItemBased {
         db.populateUserHM();
         //db.createTestTrainingSet();
         db.populateAveragesInMap();
-        //db.gettAllItemTuplesFromTable();
-        //db.calculateSimilarities();
-        //db.populateSimilarityTable("SIMILARITY2");
-        db.populateSimilarityHM();
-        db.populatePredictedRatingsHM();
+        db.gettAllItemTuplesFromTable();
+        db.calculateSimilarities();
+        db.populateSimilarityTable("SIMILARITYBIG2");
+        // * db.populateSimilarityHM();
+        // * db.populatePredictedRatingsHM();
         //db.populatePredictionsCacheHM();
-        db.predictAllSmarterRatings();
+        // * db.predictAllSmarterRatings();
         //System.out.println("Predicted Rating: " + db.predictRating(1, 12332));
         //db.populatePredictedRatingsTable("TESTSET");
         //db.updatePredictedRatingsTable();
