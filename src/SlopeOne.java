@@ -13,9 +13,12 @@ public class SlopeOne {
     final String database_filename = "comp3208.db";
     //final String trainingset_tablename = "TRAININGSET";
     final String trainingset_tablename = "TRAININGSET";
-    final String predictedRatings_tablename = "TESTSET3";
     final String difference_tablename = "DIFFERENCECOPY";
     public SQLiteConnection c;
+    final String new_pred_table = "PREDICTIONSSMALLCOMBINED";
+    final String predictedRatings_tablename = "TESTSET";
+
+
     public HashMap<Integer, Float> averageRatings = new HashMap<>();
     public List<ItemTuple> itemTuples = new ArrayList<>();
     public HashMap<ItemTuple, Float> differencesTable = new HashMap<>();
@@ -23,11 +26,13 @@ public class SlopeOne {
     public HashMap<ItemTuple, Float> similarityTable = new HashMap<>();
     final String similarity_tablename = "SIMILARITYCOPY2";
     final String predictions_tablename = "PREDICTIONSLOPEONE";
+    final String sim_diff_table = "SIMDIFF2";
     //public HashMap<ItemTuple, Float> similarityTable1 = new HashMap<>();
     public ArrayList<RatingTuple> ratingTuples = new ArrayList<>();
     //int count2 = 0;
     int count = 0;
     public HashMap<Integer, ArrayList> predictionTuples = new HashMap<Integer, ArrayList>();
+    int userAvgUseCounter = 0;
 
     /**
      * The userHM is stored in a HashMap, which allows fast access.
@@ -366,7 +371,7 @@ public class SlopeOne {
                     } else if (similarityTable.containsKey(tuple2)) {
                         myTuple = tuple2;
                     } else {
-                        break;
+                        continue;
                     }
                     Float similarity = similarityTable.get(myTuple);
 
@@ -383,6 +388,7 @@ public class SlopeOne {
         pred = sum / d;
 
         if (Float.isNaN(pred)) {
+            userAvgUseCounter++;
             return averageRatings.get(userID);
         }
         else
@@ -499,6 +505,62 @@ public class SlopeOne {
 
     }
 
+    public void createPredictionTable() {
+        System.out.println("Creating/clearing similarity table " + new_pred_table);
+        // create the table if it does not exist
+        try {
+            c.exec("CREATE TABLE IF NOT EXISTS " + new_pred_table + "(UserID INT, ItemID INT, Predicted REAL)");
+            // delete entries from table in case it does exist
+            c.exec("DELETE FROM " + new_pred_table);
+
+            System.out.println("Done");
+        } catch (SQLiteException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public void calculatePredictedRatingsAndPopulateTable() throws SQLiteException {
+
+        createPredictionTable();
+        int stepSize = 1000;
+        int counter = 0;
+
+        try {
+            SQLiteStatement stat = c.prepare("SELECT UserID, ItemID FROM TESTSET");
+            //String query = "UPDATE TESTSET SET Predicted = ? WHERE UserID = ? AND ItemID = ?";
+            String query = "INSERT INTO " + new_pred_table + " VALUES (?,?,?)";
+            SQLiteStatement statUpdate = c.prepare(query);
+
+            c.exec("BEGIN TRANSACTION;");
+            while (stat.step()) {
+                counter++;
+
+                Integer userID = stat.columnInt(0);
+                Integer itemID = stat.columnInt(1);
+                Float predictedRating = predictWeightedSlopeOneBasedOnSimilarity(userID, itemID);
+
+                statUpdate.bind(3, predictedRating);
+                statUpdate.bind(1, userID);
+                statUpdate.bind(2, itemID);
+
+                if (counter % stepSize == 0) {
+                    System.out.println(("Prediction: " + predictedRating) + " and num of pred ratings so far: " + counter);
+                }
+
+                statUpdate.stepThrough();
+                statUpdate.reset();
+            }
+            stat.dispose();
+
+            System.out.println("Number of times average user rating was used: " + userAvgUseCounter);
+            System.out.println("Calculated predictions and populated prediction table.");
+
+        } catch (SQLiteException e) {
+            error(e);
+        }
+        c.exec("COMMIT;");
+    }
+
 
     /**
      * Show error message.
@@ -526,9 +588,9 @@ public class SlopeOne {
         //db.calculateAllDifferences();
         db.populateDifferenceHM();
         db.populateSimilarityHM();
-        db.populatePredictedRatingsHM();
-        db.predictAllSlopeOneRatings();
-
+        //db.populatePredictedRatingsHM();
+        //db.predictAllSlopeOneRatings();
+        db.calculatePredictedRatingsAndPopulateTable();
         db.finish();
         long stopTime = System.currentTimeMillis();
         long elapsedTime = stopTime - startTime;
