@@ -10,28 +10,15 @@ import java.util.Map;
 import java.util.Map.Entry;
 
 public class SlopeOne {
-    final String database_filename = "comp3208.db";
-    //final String trainingset_tablename = "TRAININGSET";
-    final String trainingset_tablename = "TRAININGSET";
-    final String difference_tablename = "DIFFERENCECOPY";
+    final String database_filename = "comp3208-eval.db";
+    final String trainingset_tablename = "NEWTRAININGSET";
     public SQLiteConnection c;
-    final String new_pred_table = "PREDICTIONSSMALLCOMBINED";
-    final String predictedRatings_tablename = "TESTSET";
-
-
+    final String new_pred_table = "PREDICTIONSSLOPEONE";
+    final String testset_tablename = "NEWTESTSET";
     public HashMap<Integer, Float> averageRatings = new HashMap<>();
-    public List<ItemTuple> itemTuples = new ArrayList<>();
     public HashMap<ItemTuple, Float> differencesTable = new HashMap<>();
-    public HashMap<ItemUserTuple, Float> predictedRatings = new HashMap<>();
     public HashMap<ItemTuple, Float> similarityTable = new HashMap<>();
-    final String similarity_tablename = "SIMILARITYCOPY2";
-    final String predictions_tablename = "PREDICTIONSLOPEONE";
-    final String sim_diff_table = "SIMDIFF2";
-    //public HashMap<ItemTuple, Float> similarityTable1 = new HashMap<>();
-    public ArrayList<RatingTuple> ratingTuples = new ArrayList<>();
-    //int count2 = 0;
-    int count = 0;
-    public HashMap<Integer, ArrayList> predictionTuples = new HashMap<Integer, ArrayList>();
+
     int userAvgUseCounter = 0;
 
     /**
@@ -113,25 +100,6 @@ public class SlopeOne {
         }
     }
 
-    public void populatePredictedRatingsHM() {
-        int count = 0;
-        try {
-            SQLiteStatement stat = c.prepare("SELECT * FROM " + predictedRatings_tablename);
-            while (stat.step()) {
-                Integer user = stat.columnInt(0);
-                Integer item = stat.columnInt(1);
-                Float rating = (float) stat.columnDouble(2);
-                ItemUserTuple tuple = new ItemUserTuple(user, item);
-                predictedRatings.put(tuple, rating);
-            }
-            stat.dispose();
-            System.out.println("Predicted rating HM populated");
-        } catch (SQLiteException e) {
-            error(e);
-        }
-    }
-
-
     // Returns a HM<userID, RatingTuple> containing all users that have rated both items and their ratings.
     public HashMap<Integer, RatingTuple> getUserRatingsForTwoItems(int item1, int item2) {
         HashMap<Integer, Float> userRatingsForItem1 = itemHM.get(item1);
@@ -189,48 +157,54 @@ public class SlopeOne {
         return result;
     }
 
-    public void calculateAllDifferences() {
-        // Get all item tuples from table for which differences have to be computed.
-        gettAllItemTuplesFromTable();
+    public void calculateAllDifferences(String tablename) throws SQLiteException {
+        createDifferenceTable(tablename);
+
+        SQLiteStatement statSim = c.prepare("INSERT INTO " + tablename + "  VALUES (?,?,?)");
 
         int stepSize = 1000000;
         int counter = 0;
-        for (ItemTuple tuple : itemTuples) {
-            Float difference = calculateDifferenceBetweenTwoItems(tuple.item1, tuple.item2);
-            differencesTable.put(tuple, difference);
-            counter++;
-            if (counter % stepSize == 0) {
-                System.out.println("Difference between item " + tuple.item1 + " and item " + tuple.item2 + ": " + difference + " # of differences calculated" + differencesTable.size());
+        c.exec("BEGIN");
+
+        for (Integer item1 : itemHM.keySet()) {
+            for (Integer item2 : itemHM.keySet()) {
+                if (!item1.equals(item2)) {
+                    counter++;
+
+                    Float difference = calculateDifferenceBetweenTwoItems(item1, item2);
+
+                    statSim.bind(1, item1);
+                    statSim.bind(2, item2);
+                    statSim.bind(3, difference);
+                    statSim.stepThrough();
+                    statSim.reset();
+
+
+                    if (counter % stepSize == 0) {
+                        System.out.println("Difference between " + item1 + " and " + item2 + " is " + difference);
+                        System.out.println("Num of differences so far: " + counter);
+                    }
+                }
             }
         }
+        c.exec("COMMIT");
+
+    }
+
+    public void createDifferenceTable(String tablename){
+        System.out.println("Creating/clearing difference table " + tablename);
+        // create the table if it does not exist
         try {
-            populateDifferenceTable();
+            c.exec("CREATE TABLE IF NOT EXISTS " + tablename + "(Item1ID INT, Item2ID INT, Difference REAL)");
+            // delete entries from table in case it does exist
+            c.exec("DELETE FROM " + tablename);
+
+            System.out.println("Done");
         } catch (SQLiteException e) {
             e.printStackTrace();
         }
     }
 
-    public void predictAllSlopeOneRatings() throws SQLiteException {
-        int stepSize = 1000;
-        int counter = 0;
-        for (Entry<ItemUserTuple, Float> entry : predictedRatings.entrySet()) {
-            Integer userID = entry.getKey().userID;
-            Integer itemID = entry.getKey().itemID;
-            Float pred = predictWeightedSlopeOneBasedOnSimilarity(userID, itemID);
-            if (pred < 1.0f) {
-                pred = 1.0f;
-            } else if (pred > 5.0f) {
-                pred = 5.0f;
-            }
-            counter++;
-            predictedRatings.replace(entry.getKey(), pred);
-            if (counter % stepSize == 0) {
-                System.out.println(("Prediction: " + pred) + " and num of pred ratings so far: " + counter);
-            }
-        }
-        System.out.println("Size: " + predictedRatings.size());
-        populatePredictedRatingsTable();
-    }
 
     public Float predictSlopeOne(Integer userID, Integer itemID) {
         Float sum = 0.0f;
@@ -243,72 +217,37 @@ public class SlopeOne {
                 Float difference = 0.0f;
                 if (allUserRatingForItem.containsKey(userID)) {
                     ItemTuple tuple = new ItemTuple(item, itemID);
-                    difference = differencesTable.get(tuple);
-                    //System.out.println("Difference smarter for items: " + item + " and " + itemID + " : " + difference);
-                    sum += difference;
-                    counter++;
+                    //System.out.println("item 1 " + item + " and item 2: " + itemID);
+                    if (differencesTable.containsKey(tuple)) {
+                        difference = differencesTable.get(tuple);
+                        sum += difference;
+                        counter++;
+                        //System.out.println("Dif" + difference);
+                    }
+                    else{
+                        continue;
+                    }
                 }
             }
         }
         //System.out.println("Counter: " + counter);
         pred = sum / counter;
 
+        if (pred < 1.0f) {
+            pred = 1.0f;
+        } else if (pred > 5.0f) {
+            pred = 5.0f;
+        }
+
         if (Float.isNaN(pred)) {
+            userAvgUseCounter++;
             return averageRatings.get(userID);
+
         }
         else{
             pred += averageRatings.get(userID);
             return pred;
         }
-        //System.out.println("sum: " + sum);
-        //System.out.println("average: " + averageRatings.get(userID));
-    }
-
-    public void createPredictionTable(String tablename) {
-        System.out.println("Creating/clearing similarity table " + tablename);
-        // create the table if it does not exist
-        try {
-            c.exec("CREATE TABLE IF NOT EXISTS " + tablename + "(UserID INT, ItemID INT, Predicted REAL)");
-            // delete entries from table in case it does exist
-            c.exec("DELETE FROM " + tablename);
-
-            System.out.println("Done");
-        } catch (SQLiteException e) {
-            e.printStackTrace();
-        }
-    }
-
-    public void populatePredictedRatingsTable() throws SQLiteException {
-        createPredictionTable(predictions_tablename);
-        SQLiteStatement statSim = c.prepare("INSERT INTO " + predictions_tablename + "  VALUES (?,?,?)");
-
-        c.exec("BEGIN");
-
-        System.out.println("Size" + predictedRatings.size());
-
-        for (Entry<ItemUserTuple, Float> entry : predictedRatings.entrySet()) {
-
-            Integer userID = entry.getKey().userID;
-            Integer itemID = entry.getKey().itemID;
-            Float prediction = entry.getValue();
-            System.out.println(userID + " ," + itemID + " ," + prediction);
-
-            statSim.bind(1, userID);
-            statSim.bind(2, itemID);
-            if (prediction.equals(null)) {
-                statSim.bind(3, 0);
-
-            } else {
-                statSim.bind(3, prediction);
-            }
-            statSim.stepThrough();
-            statSim.reset();
-        }
-
-        System.out.println("Predicted ratings inserted into table");
-        // now do the commit part to save the changes to file
-        c.exec("COMMIT");
-
     }
 
     public Float predictWeightedSlopeOne(Integer userID, Integer itemID) {
@@ -320,30 +259,38 @@ public class SlopeOne {
                 HashMap<Integer, Float> allUserRatingForItem = itemHM.get(item);
                 Float difference = 0.0f;
                 if (allUserRatingForItem.containsKey(userID)) {
+
+
                     ItemTuple tuple = new ItemTuple(item, itemID);
-                    Float rating = allUserRatingForItem.get(userID);
-                    difference = differencesTable.get(tuple);
-                    System.out.println("Difference smarter for items: " + item + " and " + itemID + " : " + difference);
-                    int size = getUserRatingsForTwoItems(item, itemID).size();
-                    System.out.println("Size: " + size);
-                    sum += difference * size;
-                    System.out.println("Weighted Sum: " + sum);
-                    d += size;
+
+                    if (similarityTable.containsKey(tuple)) {
+                        difference = differencesTable.get(tuple);
+                        //System.out.println("Difference smarter for items: " + item + " and " + itemID + " : " + difference);
+                        int size = getUserRatingsForTwoItems(item, itemID).size();
+                        //System.out.println("Size: " + size);
+                        sum += difference * size;
+                        //System.out.println("Weighted Sum: " + sum);
+                        d += size;
+                    } else {
+                        continue;
+                    }
                 }
             }
         }
-        System.out.println("Denom: " + d);
+        //System.out.println("Denom: " + d);
         pred = sum / d;
+
+        if (pred < 1.0f) {
+            pred = 1.0f;
+        } else if (pred > 5.0f) {
+            pred = 5.0f;
+        }
 
         if (Float.isNaN(pred)) {
             return averageRatings.get(userID);
         }
         else{
             pred += averageRatings.get(userID);
-
-            System.out.println("sum: " + sum);
-            System.out.println("average: " + averageRatings.get(userID));
-
             return pred;
         }
 
@@ -400,70 +347,10 @@ public class SlopeOne {
         }
     }
 
-    public void populateSimilarityHM() {
-        try {
-            SQLiteStatement stat = c.prepare("SELECT Item1, Item2, Sim FROM SIMDIFF2");
-
-            while (stat.step()) {
-                Integer item1 = stat.columnInt(0);
-                Integer item2 = stat.columnInt(1);
-                Float similarity = (float) stat.columnDouble(2);
-
-                ItemTuple tuple = new ItemTuple(item1, item2);
-
-                similarityTable.put(tuple, similarity);
-                //System.out.println("Similarity: " + similarity);
-            }
-            System.out.println("Loaded similarity table HM from database. Size: " + similarityTable.size());
-            stat.dispose();
-
-        } catch (SQLiteException e) {
-            error(e);
-        }
-    }
-
-    public void createDifferenceTable() {
-        System.out.println("Creating/clearing similarity table " + difference_tablename);
-        // create the table if it does not exist
-        try {
-            c.exec("CREATE TABLE IF NOT EXISTS " + difference_tablename + "(Item1ID INT, Item2ID INT, Difference REAL)");
-            // delete entries from table in case it does exist
-            c.exec("DELETE FROM " + difference_tablename);
-
-            System.out.println("Done");
-        } catch (SQLiteException e) {
-            e.printStackTrace();
-        }
-    }
-
-    public void populateDifferenceTable() throws SQLiteException {
-        createDifferenceTable();
-
-        SQLiteStatement statSim = c.prepare("INSERT INTO " + difference_tablename + "  VALUES (?,?,?)");
-
-        c.exec("BEGIN");
-
-        for (Entry<ItemTuple, Float> entry : differencesTable.entrySet()) {
-
-            ItemTuple tuple = entry.getKey();
-            Float diff = entry.getValue();
-
-            // select whether to put it in the getUserRatingsForTwoItems or training set
-            statSim.bind(1, tuple.item1);
-            statSim.bind(2, tuple.item2);
-            statSim.bind(3, diff);
-            statSim.stepThrough();
-            statSim.reset();
-        }
-
-        // now do the commit part to save the changes to file
-        c.exec("COMMIT");
-
-    }
 
     public void populateDifferenceHM() {
         try {
-            SQLiteStatement stat = c.prepare("SELECT Item1, Item2, Diff FROM SIMDIFF2");
+            SQLiteStatement stat = c.prepare("SELECT Item1ID, Item2ID, Difference FROM DIFFERENCEEVAL");
 
             while (stat.step()) {
                 Integer item1 = stat.columnInt(0);
@@ -473,7 +360,6 @@ public class SlopeOne {
                 ItemTuple tuple = new ItemTuple(item1, item2);
 
                 differencesTable.put(tuple, diff);
-                //System.out.println("Similarity: " + similarity);
             }
             System.out.println("Loaded difference table HM from database. Size: " + differencesTable.size());
             stat.dispose();
@@ -483,27 +369,6 @@ public class SlopeOne {
         }
     }
 
-    public void gettAllItemTuplesFromTable() {
-        System.out.println("Loading item tuples from table DIFFERENCE");
-        try {
-            SQLiteStatement stat = c.prepare("SELECT * FROM DIFFERENCE");
-            int count = 0;
-            while (stat.step()) {
-                Integer itemID1 = stat.columnInt(0);
-                Integer itemID2 = stat.columnInt(1);
-                ItemTuple itemTuple = new ItemTuple(itemID1, itemID2);
-                itemTuples.add(itemTuple);
-                count++;
-                //System.out.println("Added " + itemID1 + " and " + itemID2 + " with total of " + itemTuples.size());
-            }
-            stat.dispose();
-            System.out.println("Loaded " + itemTuples.size() + "tuples");
-
-        } catch (SQLiteException e) {
-            error(e);
-        }
-
-    }
 
     public void createPredictionTable() {
         System.out.println("Creating/clearing similarity table " + new_pred_table);
@@ -518,15 +383,15 @@ public class SlopeOne {
             e.printStackTrace();
         }
     }
-
     public void calculatePredictedRatingsAndPopulateTable() throws SQLiteException {
 
         createPredictionTable();
         int stepSize = 1000;
         int counter = 0;
+        ArrayList<RatingTuple> predicted = new ArrayList<>();
 
         try {
-            SQLiteStatement stat = c.prepare("SELECT UserID, ItemID FROM TESTSET");
+            SQLiteStatement stat = c.prepare("SELECT UserID, ItemID, Rating FROM " + testset_tablename + " limit 15000");
             //String query = "UPDATE TESTSET SET Predicted = ? WHERE UserID = ? AND ItemID = ?";
             String query = "INSERT INTO " + new_pred_table + " VALUES (?,?,?)";
             SQLiteStatement statUpdate = c.prepare(query);
@@ -537,7 +402,14 @@ public class SlopeOne {
 
                 Integer userID = stat.columnInt(0);
                 Integer itemID = stat.columnInt(1);
-                Float predictedRating = predictWeightedSlopeOneBasedOnSimilarity(userID, itemID);
+                Float realRating = (float) stat.columnDouble(2);
+
+                Float predictedRating = predictSlopeOne(userID, itemID);
+                //Float predictedRating = predictWeightedSlopeOne(userID, itemID);
+                //Float predictedRating = predictWeightedSlopeOneBasedOnSimilarity(userID, itemID);
+
+                RatingTuple ratingTuple = new RatingTuple(predictedRating, realRating);
+                predicted.add(ratingTuple);
 
                 statUpdate.bind(3, predictedRating);
                 statUpdate.bind(1, userID);
@@ -554,11 +426,21 @@ public class SlopeOne {
 
             System.out.println("Number of times average user rating was used: " + userAvgUseCounter);
             System.out.println("Calculated predictions and populated prediction table.");
+            calculateMSE(predicted);
 
         } catch (SQLiteException e) {
             error(e);
         }
         c.exec("COMMIT;");
+    }
+
+    public void calculateMSE(ArrayList<RatingTuple> predicted) {
+        Float errorSum = 0.0f;
+        for (RatingTuple tuple : predicted) {
+            errorSum += (float) Math.pow((tuple.r1 - tuple.r2), 2);
+        }
+        Float mse = errorSum / predicted.size();
+        System.out.println("MSE: " + mse);
     }
 
 
@@ -585,11 +467,8 @@ public class SlopeOne {
         db.populateItemHM();
         db.populateUserHM();
         db.populateAveragesInMap();
-        //db.calculateAllDifferences();
+        db.calculateAllDifferences("DIFFERENCEEVAL");
         db.populateDifferenceHM();
-        db.populateSimilarityHM();
-        //db.populatePredictedRatingsHM();
-        //db.predictAllSlopeOneRatings();
         db.calculatePredictedRatingsAndPopulateTable();
         db.finish();
         long stopTime = System.currentTimeMillis();

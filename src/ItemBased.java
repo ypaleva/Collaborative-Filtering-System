@@ -20,21 +20,11 @@ import java.lang.*;
  * @author Enrico Gerding
  */
 public class ItemBased {
-    final String database_filename = "comp3208.db";
-    final String trainingset_tablename = "TRAININGSET";
-    //final String trainingset_tablename = "BIGTRAININGSET";
-    // thissss final String trainingset_tablename = "NEWTRAININGSET";
-    final String predictedRatings_tablename = "TESTSET";
-    // thisss final String predictedRatings_tablename = "NEWTESTSET";
-    //final String predictions_tablename = "PREDICTION2";
-    final String predictions_tablename = "PREDICTIONSSMALL";
-    //final String similarity_tablename = "SIMILARITYBIG";
-    //final String new_similarity_table = "SIMILARITYBIG2";
-    //final String similarity_tablename = "SIMILARITYEVALUATE";
-    final String new_similarity_table = "SIMILARITYEVALUATE2";
-    final String similarity_tablename = "SIMILARITYCOPY2";
-    final String new_pred_table = "PREDICTIONSSMALL";
-
+    final String database_filename = "comp3208-eval.db";
+    final String trainingset_tablename = "NEWTRAININGSET";
+    final String testset_tablename = "NEWTESTSET";
+    final String similarity_tablename = "SIMILARITYEVALCOPY";
+    final String new_pred_table = "PREDICTIONS";
 
     int userAvgUseCounter = 0;
 
@@ -44,12 +34,6 @@ public class ItemBased {
     public List<ItemTuple> itemTuples = new ArrayList<>();
     public HashMap<ItemTuple, Float> similarityTable = new HashMap<>();
     public HashMap<ItemUserTuple, RatingTuple> predictedRatings = new HashMap<>();
-    public HashMap<ItemUserTuple, Float> realRatings = new HashMap<>();
-    //public HashMap<ItemTuple, Float> similarityTable1 = new HashMap<>();
-    public ArrayList<RatingTuple> ratingTuples = new ArrayList<>();
-    //int count2 = 0;
-    int count = 0;
-    public HashMap<Integer, ArrayList> predictionTuples = new HashMap<Integer, ArrayList>();
 
     /**
      * The userHM is stored in a HashMap, which allows fast access.
@@ -146,9 +130,10 @@ public class ItemBased {
         createPredictionTable();
         int stepSize = 1000;
         int counter = 0;
+        ArrayList<RatingTuple> predicted = new ArrayList<>();
 
         try {
-            SQLiteStatement stat = c.prepare("SELECT UserID, ItemID FROM TESTSET");
+            SQLiteStatement stat = c.prepare("SELECT UserID, ItemID, Rating FROM " + testset_tablename + " limit 15000");
             //String query = "UPDATE TESTSET SET Predicted = ? WHERE UserID = ? AND ItemID = ?";
             String query = "INSERT INTO " + new_pred_table + " VALUES (?,?,?)";
             SQLiteStatement statUpdate = c.prepare(query);
@@ -159,7 +144,11 @@ public class ItemBased {
 
                 Integer userID = stat.columnInt(0);
                 Integer itemID = stat.columnInt(1);
+                Float realRating = (float) stat.columnDouble(2);
                 Float predictedRating = predictSmarterRating(userID, itemID);
+                //Float predictedRating = predictSmartestRating(userID, itemID, 5)
+                RatingTuple ratingTuple = new RatingTuple(predictedRating, realRating);
+                predicted.add(ratingTuple);
 
                 statUpdate.bind(3, predictedRating);
                 statUpdate.bind(1, userID);
@@ -176,6 +165,7 @@ public class ItemBased {
 
             System.out.println("Number of times average user rating was used: " + userAvgUseCounter);
             System.out.println("Calculated predictions and populated prediction table.");
+            calculateMSE(predicted);
 
         } catch (SQLiteException e) {
             error(e);
@@ -186,38 +176,28 @@ public class ItemBased {
     public HashMap<Integer, RatingTuple> getUserRatingsForTwoItems(int item1, int item2) {
         HashMap<Integer, Float> userRatingsForItem1 = itemHM.get(item1);
         HashMap<Integer, Float> userRatingsForItem2 = itemHM.get(item2);
-        //int count = 0;
         HashMap<Integer, RatingTuple> userRatingsForTwoItems = new HashMap<>();
-        //System.out.println(userRatingsForTwoItems.size());
 
         for (Integer user : userRatingsForItem1.keySet()) {
             if (userRatingsForItem2.containsKey(user)) {
                 userRatingsForTwoItems.put(user, new RatingTuple(userRatingsForItem1.get(user), userRatingsForItem2.get(user)));
-                //System.out.println("User : " + user + " Rating for item 1: " + userRatingsForItem1.get(user) + " Rating for item 2: " + userRatingsForItem2.get(user));
-                //count++;
-
             }
         }
-        //System.out.println("Number of users who have rated the same item: " + userRatingsForTwoItems.size());
         return userRatingsForTwoItems;
     }
 
     public Float calculateAverageHelper(HashMap<Integer, Float> userRatings) {
-        Float average = 0.0f;
         Float sum = 0.0f;
         for (Map.Entry<Integer, Float> entry : userRatings.entrySet()) {
-            //Integer itemID = entry.getKey();
             Float rating = entry.getValue();
-            //System.out.println(rating);
             sum += rating;
         }
-        average = sum / userRatings.size();
+        Float average = sum / userRatings.size();
         return average;
     }
 
     public void populateAveragesInMap() {
         for (Integer userID : userHM.keySet()) {
-            //System.out.println(userID);
             HashMap<Integer, Float> userRatings = userHM.get(userID);
             Float average = calculateAverageHelper(userRatings);
             averageRatings.put(userID, average);
@@ -239,7 +219,6 @@ public class ItemBased {
         Float numerator = 0.0f;
         Float sum1Denom = 0.0f;
         Float sum2Denom = 0.0f;
-        Float denominator = 0.0f;
 
         for (Integer user : userRatingsForTwoItems.keySet()) {
             Float userAverageRating = averageRatings.get(user);
@@ -252,7 +231,7 @@ public class ItemBased {
             sum2Denom += (float) Math.pow(f2, 2);
         }
 
-        denominator = (float) Math.sqrt(sum1Denom) * (float) Math.sqrt(sum2Denom);
+        Float denominator = (float) Math.sqrt(sum1Denom) * (float) Math.sqrt(sum2Denom);
 
         Float similarity = numerator / denominator;
         return similarity;
@@ -295,31 +274,6 @@ public class ItemBased {
     }
 
 
-
-//    public void predictAllSmarterRatings() throws SQLiteException {
-//        int stepSize = 1000;
-//        int counter = 0;
-//        for (Entry<ItemUserTuple, RatingTuple> entry : predictedRatings.entrySet()) {
-//            Integer userID = entry.getKey().userID;
-//            Integer itemID = entry.getKey().itemID;
-//            Float pred = predictSmarterRating(userID, itemID);
-//                if (pred < 1.0f) {
-//                   pred = 1.0f;
-//               } else if (pred > 5.0f) {
-//                    pred = 5.0f;
-//                }
-//            counter++;
-//            predictedRatings.replace(entry.getKey(), new RatingTuple(entry.getValue().r1, pred));
-//            if (counter % stepSize == 0) {
-//                System.out.println(("Prediction: " + pred) + " and num of pred ratings so far: " + counter);
-//            }
-//        }
-//        System.out.println("Size: " + predictedRatings.size());
-//        calculateMSE();
-//        populatePredictedRatingsTable();
-//    }
-
-
     public Float predictSmarterRating(Integer userID, Integer itemID) {
         Float n = 0.0f;
         Float d = 0.0f;
@@ -332,8 +286,6 @@ public class ItemBased {
                 Float rating = 0.0f;
                 if (allUserRatingForItem.containsKey(userID)) {
 
-                    //System.out.println("Item for which we calculate rating: " + itemID + ", other item " + item);
-
                     ItemTuple tuple1 = new ItemTuple(item, itemID);
                     ItemTuple tuple2 = new ItemTuple(itemID, item);
                     if (similarityTable.containsKey(tuple1)) {
@@ -344,50 +296,28 @@ public class ItemBased {
                         continue;
                     }
                     similarity = similarityTable.get(myTuple);
-                    //System.out.println("Similarity: " + similarity);
-                    //if(similarity > 0) {
                     rating = allUserRatingForItem.get(userID);
                     n = n + (similarity * rating);
                     d = d + similarity;
-                    //System.out.println("Nominator: " + n);
-                    //System.out.println("Denominator " + d);
-                    //}
 
                 }
             }
-            pred = n / d;
-
-            if (Float.isNaN(pred)) {
-                pred = averageRatings.get(userID);
-                userAvgUseCounter++;
-            }
         }
-        //System.out.println("Prediction " + pred);
+
+        pred = n / d;
+
+        if (pred < 1.0f) {
+            pred = 1.0f;
+        } else if (pred > 5.0f) {
+            pred = 5.0f;
+        }
+
+        if (Float.isNaN(pred)) {
+            pred = averageRatings.get(userID);
+            userAvgUseCounter++;
+        }
 
         return pred;
-    }
-
-    public void predictAllSmartestRatings() throws SQLiteException {
-        int stepSize = 1000;
-        int counter = 0;
-        for (Entry<ItemUserTuple, RatingTuple> entry : predictedRatings.entrySet()) {
-            Integer userID = entry.getKey().userID;
-            Integer itemID = entry.getKey().itemID;
-            Float pred = predictSmartestRating(userID, itemID, 10);
-            //if (pred < 1.0f) {
-            //pred = 1.0f;
-            //} else if (pred > 5.0f) {
-            //pred = 5.0f;
-            //}
-            counter++;
-            predictedRatings.replace(entry.getKey(), new RatingTuple(entry.getValue().r1, pred));
-            if (counter % stepSize == 0) {
-                System.out.println(("Prediction: " + pred) + " and num of pred ratings so far: " + counter);
-            }
-        }
-        System.out.println("Size: " + predictedRatings.size());
-        calculateMSE();
-        populatePredictedRatingsTable();
     }
 
     public Float predictSmartestRating(Integer userID, Integer itemID, int K) {
@@ -411,13 +341,13 @@ public class ItemBased {
                     } else if (similarityTable.containsKey(tuple2)) {
                         myTuple = tuple2;
                     } else {
-                        break;
+                        continue;
                     }
                     similarity = similarityTable.get(myTuple);
-                    if (similarity > 0) {
+                    //if (similarity > 0) {
                         rating = allUserRatingForItem.get(userID);
                         tuples.add(new SimilarityRatingTuple(similarity, rating));
-                    }
+                    //}
                     //System.out.println("Tuples size: " + tuples.size());
                 }
             }
@@ -447,6 +377,12 @@ public class ItemBased {
 
             if (Float.isNaN(pred)) {
                 pred = averageRatings.get(userID);
+            }
+
+            if (pred < 1.0f) {
+                pred = 1.0f;
+            } else if (pred > 5.0f) {
+                pred = 5.0f;
             }
         }
 
@@ -491,32 +427,12 @@ public class ItemBased {
     }
 
 
-//    //Populates list with True - Predicted rating tuples from table
-//    public void populateRatingTuples() {
-//        try {
-//            SQLiteStatement stat = c.prepare("SELECT (Rating, Predicted) FROM " + "NEWTESTSET");
-//
-//            while (stat.step()) {
-//                Float rating = (float) stat.columnDouble(2);
-//                Float predicted = (float) stat.columnDouble(3);
-//
-//                ratingTuples.add(new RatingTuple(rating, predicted));
-//            }
-//            System.out.println("Populated rating tuples from database.");
-//            stat.dispose();
-//
-//        } catch (SQLiteException e) {
-//            error(e);
-//        }
-//
-//    }
-
-    public void calculateMSE() {
+    public void calculateMSE(ArrayList<RatingTuple> predicted) {
         Float errorSum = 0.0f;
-        for (RatingTuple tuple : predictedRatings.values()) {
+        for (RatingTuple tuple : predicted) {
             errorSum += (float) Math.pow((tuple.r1 - tuple.r2), 2);
         }
-        Float mse = errorSum / predictedRatings.values().size();
+        Float mse = errorSum / predicted.size();
         System.out.println("MSE: " + mse);
     }
 
@@ -542,49 +458,6 @@ public class ItemBased {
         }
     }
 
-    public void populatePredictedRatingsHM() {
-        int count = 0;
-        try {
-            SQLiteStatement stat = c.prepare("SELECT * FROM " + predictedRatings_tablename);
-            while (stat.step()) {
-                Integer user = stat.columnInt(0);
-                Integer item = stat.columnInt(1);
-                Float rating = (float) stat.columnDouble(2);
-                Float predicted = (float) stat.columnDouble(3);
-                ItemUserTuple tuple = new ItemUserTuple(user, item);
-                predictedRatings.put(tuple, new RatingTuple(rating, predicted));
-                //realRatings.put(tuple, rating);
-            }
-            stat.dispose();
-            System.out.println("Predicted rating HM populated");
-        } catch (SQLiteException e) {
-            error(e);
-        }
-    }
-
-
-    public void predictAllSmarterRatings() throws SQLiteException {
-        int stepSize = 1000;
-        int counter = 0;
-        for (Entry<ItemUserTuple, RatingTuple> entry : predictedRatings.entrySet()) {
-            Integer userID = entry.getKey().userID;
-            Integer itemID = entry.getKey().itemID;
-            Float pred = predictSmarterRating(userID, itemID);
-            if (pred < 1.0f) {
-                pred = 1.0f;
-            } else if (pred > 5.0f) {
-                pred = 5.0f;
-            }
-            counter++;
-            predictedRatings.replace(entry.getKey(), new RatingTuple(entry.getValue().r1, pred));
-            if (counter % stepSize == 0) {
-                System.out.println(("Prediction: " + pred) + " and num of pred ratings so far: " + counter);
-            }
-        }
-        System.out.println("Size: " + predictedRatings.size());
-        calculateMSE();
-        populatePredictedRatingsTable();
-    }
 
     /**
      * Create a table or clear it if it already exists.
@@ -634,89 +507,6 @@ public class ItemBased {
             e.printStackTrace();
         }
     }
-
-//    public void gettAllItemTuplesFromTable() throws SQLiteException {
-//        createSimilarityTable(new_similarity_table);
-//        //System.out.println("Loading item tuples from table " + similarity_tablename);
-//        //Integer low = 0;
-//        //Integer high = 1000000;
-//        int stepSize = 10000000;
-//        int counter = 0;
-//        HashMap<ItemTuple, Float> mySimilarityTable = new HashMap<>();
-//
-//        try {
-//            SQLiteStatement stat = c.prepare("SELECT ItemID1, ItemID2 FROM " + similarity_tablename);
-//
-//            //SQLiteStatement statSim = c.prepare("INSERT INTO " + new_similarity_table + "  VALUES (?,?,?)");
-//
-//            //c.exec("BEGIN");
-//
-//            while (stat.step()) {
-//
-//                Integer itemID1 = stat.columnInt(0);
-//                Integer itemID2 = stat.columnInt(1);
-//                ItemTuple itemTuple = new ItemTuple(itemID1, itemID2);
-//
-//                Float similarity = calculateSimilarityBetweenTwoItems(itemID1, itemID2);
-//
-//                mySimilarityTable.put(itemTuple, similarity);
-//                counter++;
-//
-//                //statSim.bind(1, itemID1);
-//                //statSim.bind(2, itemID2);
-//                //statSim.bind(3, similarity);
-//                //statSim.stepThrough();
-//                //statSim.reset();
-//                //counter++;
-//
-////                if (counter % stepSize == 0) {
-////                    populateSimilarityTable(new_similarity_table, mySimilarityTable);
-////                    System.out.println("Similarities computed so far: " + counter);
-////                    mySimilarityTable.clear();
-////                }
-//            }
-//            //c.exec("COMMIT");
-//
-//
-//            //itemTuples.add(itemTuple);
-//            //counter++;
-//
-//            //if (counter % stepSize == 0) {
-//
-//            //populateSimilarityTable(new_similarity_table);
-//            //System.out.println("Number of similarities populated: " + counter);
-//            //itemTuples.clear();
-//            //counter = 0;
-//            //}
-//            //System.out.println("Added " + itemID1 + " and " + itemID2 + " with total of " + itemTuples.size());
-//            stat.dispose();
-//            //System.out.println("Loaded " + itemTuples.size() + "tuples");
-//
-//        } catch (SQLiteException e) {
-//            error(e);
-//        }
-//
-//    }
-
-//    public void populateSimilarityTable(String tablename) throws SQLiteException {
-//        createSimilarityTable("CORRECTSIMILARITY");
-//
-//        SQLiteStatement statSim = c.prepare("INSERT INTO " + tablename + "  VALUES (?,?,?)");
-//
-//        c.exec("BEGIN");
-//        for (Entry<ItemTuple, Float> entry : similarityTable.entrySet()) {
-//
-//            ItemTuple tuple = entry.getKey();
-//            Float similarity = entry.getValue();
-//            // select whether to put it in the getUserRatingsForTwoItems or training set
-//            statSim.bind(1, tuple.item1);
-//            statSim.bind(2, tuple.item2);
-//            statSim.bind(3, similarity);
-//            statSim.stepThrough();
-//            statSim.reset();
-//        }
-//        c.exec("COMMIT");
-//    }
 
     /**
      * An example of how you can create your own getUserRatingsForTwoItems/training set from the userHM
@@ -810,6 +600,7 @@ public class ItemBased {
         db.populateUserHM();
         //db.createTestTrainingSet();
         db.populateAveragesInMap();
+
         db.populateSimilarityHM();
 
         db.calculatePredictedRatingsAndPopulateTable();
@@ -817,7 +608,9 @@ public class ItemBased {
         // * db.populatePredictedRatingsHM();
         // * db.predictAllSmarterRatings();
 
-        // * db.calculateSimilarities("CORRECTSIMILARITY");
+
+        //Call this, db.popu   lateItemHM(), db.populateUserHM() and  populateAveragesInMap to get sim table
+        //db.calculateSimilarities("SIMILARITYEVAL");
 
         //db.gettAllItemTuplesFromTable();
         //db.calculateSimilarities("CORRECTSIMILARITY");
